@@ -1,0 +1,1116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A browser-based nmap simulator with a practice network, challenges, packet diagrams, a cheat sheet and a theory quiz.">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font-size:14px;font-family:system-ui,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style><title>Nmap Practice Range</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@600;800&family=JetBrains+Mono:wght@400;600&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a lab console. The terminal is the working surface; a tabbed notebook (challenges, packets, reference, quiz) sits beside it. */
+:root{
+  --bg:#e8ecf0; --surface:#ffffff; --surface-2:#f2f5f7; --ink:#14202b; --muted:#566575; --line:#d3dae2;
+  --accent:#0a6c78; --accent-ink:#ffffff; --accent-soft:#d6edf0;
+  --ok:#1d8048; --ok-soft:#dcf1e4; --bad:#b4323c; --bad-soft:#f8e0e2; --warn:#99600c; --warn-soft:#f8ecd6; --of:#6a4fc0; --of-soft:#ebe5fa;
+  --term-bg:#0e161d; --term-line:#22303b; --term-fg:#cdd7df; --term-dim:#7a8a98; --term-prompt:#6fd0db; --term-cmd:#f2f6f8;
+  --t-open:#62d690; --t-closed:#ff858d; --t-filtered:#f1b74c; --t-of:#bba5f8; --t-unf:#7fd1dc; --t-head:#a6e2ea;
+  --f-display:'Chivo','Segoe UI',system-ui,sans-serif;
+  --f-body:'Public Sans','Segoe UI',system-ui,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;
+  --work-h:min(78vh,820px);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1015; --surface:#121a21; --surface-2:#18222b; --ink:#dde5eb; --muted:#91a0ae; --line:#26323d;
+  --accent:#55c5d0; --accent-ink:#04252a; --accent-soft:#12343a;
+  --ok:#5ccb8d; --ok-soft:#14321f; --bad:#ff7f88; --bad-soft:#3a1a1e; --warn:#eab04a; --warn-soft:#382a12; --of:#ad95f2; --of-soft:#271f3f;
+  --term-bg:#070b0f; --term-line:#1b2630;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0b1015; --surface:#121a21; --surface-2:#18222b; --ink:#dde5eb; --muted:#91a0ae; --line:#26323d;
+  --accent:#55c5d0; --accent-ink:#04252a; --accent-soft:#12343a;
+  --ok:#5ccb8d; --ok-soft:#14321f; --bad:#ff7f88; --bad-soft:#3a1a1e; --warn:#eab04a; --warn-soft:#382a12; --of:#ad95f2; --of-soft:#271f3f;
+  --term-bg:#070b0f; --term-line:#1b2630;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body)}
+code,kbd{font-family:var(--f-mono)}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.app{max-width:1440px;margin:0 auto;padding-block:20px 36px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 28px}
+.brand{flex:1 1 340px;min-width:0}
+h1{font:800 clamp(23px,2.6vw,31px)/1.1 var(--f-display);letter-spacing:-.015em;margin:0;text-wrap:balance}
+.brand p{margin:6px 0 0;color:var(--muted);max-width:62ch}
+.facts{display:flex;flex-wrap:wrap;gap:8px 22px;margin:0}
+.facts div{display:flex;flex-direction:column}
+dt{font:600 10.5px/1 var(--f-body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+dd{margin:5px 0 0;font:600 14px/1 var(--f-mono);font-variant-numeric:tabular-nums}
+.btn{font:600 14px/1 var(--f-body);background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent);border-radius:8px;padding:10px 16px;cursor:pointer}
+.btn:hover{filter:brightness(1.08)}
+.btn.sm{font-size:13px;padding:8px 12px}
+.btn.ghost{background:transparent;color:var(--accent);border-color:var(--line)}
+.btn:disabled{opacity:.5;cursor:default;filter:none}
+
+.grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px;align-items:start}
+.left{display:flex;flex-direction:column;gap:10px;min-width:0}
+
+/* terminal */
+.term{background:var(--term-bg);color:var(--term-fg);border:1px solid var(--term-line);border-radius:12px;display:flex;flex-direction:column;height:var(--work-h);min-height:440px;overflow:hidden}
+.term-bar{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid var(--term-line);font:12px/1.2 var(--f-mono);color:var(--term-dim)}
+.dots{display:flex;gap:6px}.dots i{width:10px;height:10px;border-radius:50%;background:var(--term-line)}
+#termTitle{flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.term-btn{background:transparent;border:1px solid var(--term-line);color:var(--term-dim);font:12px var(--f-mono);border-radius:6px;padding:3px 9px;cursor:pointer}
+.term-btn:hover{color:var(--term-fg)}
+.term-out{flex:1;overflow:auto;padding:12px 14px 4px;font:13px/1.5 var(--f-mono);white-space:pre;cursor:text}
+.term-out>div{min-height:1.5em}
+.term-in{display:flex;align-items:center;gap:8px;padding:6px 14px 12px;font:13px var(--f-mono)}
+#prompt{color:var(--term-prompt);white-space:nowrap;font-weight:600}
+#cmd{flex:1;min-width:0;background:transparent;border:0;color:var(--term-cmd);font:inherit;caret-color:var(--term-prompt);padding:4px 0}
+#cmd:focus{outline:none}
+.term:focus-within{border-color:var(--accent)}
+.l-cmd{color:var(--term-cmd)}.l-cmd .p{color:var(--term-prompt);font-weight:600}
+.l-err{color:var(--t-closed)}.l-dim{color:var(--term-dim)}.l-warn{color:var(--t-filtered)}.l-status{color:var(--t-filtered)}
+.t-head{color:var(--t-head);font-weight:600}
+.s-open{color:var(--t-open);font-weight:600}.s-closed{color:var(--t-closed)}.s-filt{color:var(--t-filtered)}.s-of{color:var(--t-of)}.s-unf{color:var(--t-unf)}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chips span{font:600 10.5px var(--f-body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.chip{font:12.5px var(--f-mono);background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+
+/* notebook panel */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;height:var(--work-h);min-height:440px;overflow:hidden;min-width:0}
+.tabs{display:flex;gap:2px;padding:4px 8px 0;border-bottom:1px solid var(--line);overflow-x:auto;flex-shrink:0}
+.tabs button{position:relative;font:600 13.5px var(--f-body);background:none;border:0;border-bottom:2px solid transparent;padding:11px 11px 10px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs button.fresh::after{content:"";position:absolute;top:9px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.badge{font:600 11px var(--f-mono);background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:1px 7px;margin-left:4px;font-variant-numeric:tabular-nums}
+.tabpanel{flex:1;overflow:auto;padding:16px 18px 28px;min-width:0}
+.tabpanel h2{font:700 17px/1.25 var(--f-display);margin:0 0 4px;text-wrap:balance}
+.tabpanel h3{font:700 14.5px/1.3 var(--f-display);margin:22px 0 8px}
+.lede{color:var(--muted);margin:0 0 14px;font-size:14px}
+.eyebrow{font:600 10.5px var(--f-body);letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}
+.tabpanel p code,.tabpanel li code,.q code,.hint code{font-size:12.5px;background:var(--surface-2);border:1px solid var(--line);padding:0 5px;border-radius:4px;white-space:nowrap}
+
+.progress{display:flex;align-items:center;gap:10px;margin:0 0 6px;font:600 12.5px var(--f-mono);color:var(--muted)}
+.bar{flex:1;height:6px;background:var(--surface-2);border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .3s}
+.task{display:grid;grid-template-columns:2.2em minmax(0,1fr);gap:2px 10px;padding:14px 0;border-top:1px solid var(--line)}
+.task .num{font:600 12.5px/1.9 var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.task.done .num{color:var(--ok)}
+.tag{font:600 10.5px var(--f-body);letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}
+.task.done .tag::after{content:" · solved";color:var(--ok)}
+.q{margin:3px 0 9px;font-size:14.5px}
+.ans{display:flex;gap:6px}
+.ans input{flex:1;min-width:0;font:13.5px var(--f-mono);padding:7px 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);color:var(--ink)}
+.ans input:disabled{color:var(--ok);border-color:var(--ok);background:var(--ok-soft)}
+.fb{font-size:13px;margin-top:6px}.fb:empty{display:none}
+.fb.ok{color:var(--ok)}.fb.bad{color:var(--bad)}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);font:600 12.5px var(--f-body);cursor:pointer}
+.linkbtn:hover{text-decoration:underline}
+.hintrow{margin-top:7px}
+.hint{margin-top:6px;font-size:13.5px;color:var(--muted)}
+.reveal{margin-top:4px;font-size:13px}
+
+/* packets */
+.pk-list{display:flex;flex-direction:column;gap:14px;margin-top:14px}
+.pk{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface-2)}
+.pk header{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.pk header code{font:600 13px var(--f-mono)}
+.st{font:600 11.5px/1 var(--f-mono);padding:4px 9px;border-radius:999px;white-space:nowrap}
+.st-open{background:var(--ok-soft);color:var(--ok)}.st-closed{background:var(--bad-soft);color:var(--bad)}
+.st-filtered{background:var(--warn-soft);color:var(--warn)}.st-of{background:var(--of-soft);color:var(--of)}
+.st-unf{background:var(--accent-soft);color:var(--accent)}.st-up{background:var(--ok-soft);color:var(--ok)}.st-down{background:var(--bad-soft);color:var(--bad)}
+.ends{display:flex;justify-content:space-between;gap:8px;margin-top:10px;font:11px var(--f-mono);color:var(--muted)}
+.ladder{margin:4px 0 0;border-inline:2px solid var(--line);padding-block:2px 6px}
+.msg{position:relative;height:30px}
+.msg .lbl{position:absolute;left:10px;right:10px;top:1px;text-align:center;font:11.5px var(--f-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg .line{position:absolute;left:0;right:0;top:21px;border-top:2px solid var(--accent)}
+.msg .line::after{content:"";position:absolute;top:-6px;width:0;height:0;border:5px solid transparent}
+.msg.out .line::after{right:-2px;border-left:9px solid var(--accent);border-right:0}
+.msg.in .line{border-top-color:var(--ok)}
+.msg.in .line::after{left:-2px;border-right:9px solid var(--ok);border-left:0}
+.msg.in .lbl{color:var(--ok)}
+.msg.lost .line{right:42%;border-top-style:dashed;border-top-color:var(--muted)}
+.msg.lost .line::after{content:"\2715";border:0;width:auto;height:auto;right:-16px;top:-10px;font:700 12px/1 var(--f-body);color:var(--bad)}
+.msg.lost .lbl{right:42%;color:var(--muted)}
+.why{margin:8px 0 0;font-size:13.5px}
+.empty{color:var(--muted);font-size:14px;border:1px dashed var(--line);border-radius:10px;padding:16px}
+
+/* reference */
+.tbl{overflow-x:auto;margin:0 0 4px}
+.tbl table{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl th,.tbl td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th{font:600 10.5px var(--f-body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.tbl td:first-child{white-space:nowrap}
+.tbl td code{font-size:12.5px}
+.tips{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;gap:6px}
+
+/* quiz */
+.qz{padding:14px 0;border-top:1px solid var(--line)}
+.qz p{margin:0 0 9px;font-size:14.5px}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{text-align:left;font:14px/1.4 var(--f-body);background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 11px;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);font-weight:600}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.explain{margin-top:8px;font-size:13.5px;color:var(--muted)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+@media (max-width:980px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .panel{height:auto;min-height:0}
+  .tabpanel{overflow:visible}
+  .term{height:64vh;min-height:380px}
+}
+@media (max-width:600px){#cmd{font-size:16px}.term-out{font-size:12px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <h1>Nmap Practice Range</h1>
+      <p>A simulated network for port-scanning drills. Type real nmap commands; every reply is generated in this page and nothing touches a real network.</p>
+    </div>
+    <dl class="facts">
+      <div><dt>Your box</dt><dd>10.10.14.7</dd></div>
+      <div><dt>Target range</dt><dd>10.10.10.0/24</dd></div>
+      <div><dt>Lab</dt><dd id="labId">#0000</dd></div>
+    </dl>
+    <button id="newLab" class="btn" type="button">New lab</button>
+  </header>
+
+  <main class="grid">
+    <div class="left">
+      <section class="term" aria-label="Practice terminal">
+        <div class="term-bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span id="termTitle">student@kali: ~</span><button id="clearBtn" class="term-btn" type="button">Clear</button></div>
+        <div id="out" class="term-out" role="log" aria-live="polite"></div>
+        <form id="cmdForm" class="term-in" autocomplete="off"><label id="prompt" for="cmd">student@kali:~$</label><input id="cmd" name="cmd" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Command"></form>
+      </section>
+      <div class="chips" id="chips"><span>Try</span></div>
+    </div>
+
+    <aside class="panel" aria-label="Lab notebook">
+      <div class="tabs" role="tablist">
+        <button role="tab" id="t-tasks" data-tab="tasks" aria-selected="true">Challenges <span id="score" class="badge">0/0</span></button>
+        <button role="tab" id="t-packets" data-tab="packets" aria-selected="false">Packets</button>
+        <button role="tab" id="t-ref" data-tab="ref" aria-selected="false">Cheat sheet</button>
+        <button role="tab" id="t-quiz" data-tab="quiz" aria-selected="false">Theory quiz</button>
+      </div>
+
+      <section class="tabpanel" id="tab-tasks" role="tabpanel" aria-labelledby="t-tasks">
+        <h2>Lab challenges</h2>
+        <p class="lede">Answer each one by scanning, not guessing. Answers change with every new lab.</p>
+        <div class="progress"><div class="bar"><i id="bar"></i></div><span id="progressTxt">0 of 0</span></div>
+        <div id="taskList"></div>
+      </section>
+
+      <section class="tabpanel" id="tab-packets" role="tabpanel" aria-labelledby="t-packets" hidden>
+        <div id="pkWrap"></div>
+      </section>
+
+      <section class="tabpanel" id="tab-ref" role="tabpanel" aria-labelledby="t-ref" hidden>
+        <h2>Cheat sheet</h2>
+        <p class="lede">The flags this range understands, and what nmap's answers mean.</p>
+
+        <h3>Port states</h3>
+        <div class="tbl"><table>
+          <thead><tr><th>State</th><th>What nmap saw</th></tr></thead>
+          <tbody>
+            <tr><td><span class="st st-open">open</span></td><td>A service answered: SYN/ACK for TCP, or a UDP reply.</td></tr>
+            <tr><td><span class="st st-closed">closed</span></td><td>The host answered RST (TCP) or ICMP port unreachable (UDP). Reachable, but nothing listens.</td></tr>
+            <tr><td><span class="st st-filtered">filtered</span></td><td>No reply, or an ICMP "administratively prohibited". A firewall is in the way.</td></tr>
+            <tr><td><span class="st st-unf">unfiltered</span></td><td>ACK scan only. The probe got through, but open vs closed is unknown.</td></tr>
+            <tr><td><span class="st st-of">open|filtered</span></td><td>UDP, FIN, NULL and Xmas scans. Silence could mean open or dropped.</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Host discovery</h3>
+        <div class="tbl"><table><tbody>
+          <tr><td><code>-sn</code></td><td>Ping sweep only, no port scan</td></tr>
+          <tr><td><code>-Pn</code></td><td>Skip discovery and treat every target as up</td></tr>
+          <tr><td><code>-PE</code> <code>-PS443</code> <code>-PA80</code></td><td>Choose discovery probes: ICMP echo, TCP SYN, TCP ACK</td></tr>
+          <tr><td><code>-n</code></td><td>No reverse DNS lookups</td></tr>
+        </tbody></table></div>
+
+        <h3>Scan types</h3>
+        <div class="tbl"><table><tbody>
+          <tr><td><code>-sS</code></td><td>SYN (half-open). Default as root</td></tr>
+          <tr><td><code>-sT</code></td><td>Full TCP connect. Default without root</td></tr>
+          <tr><td><code>-sU</code></td><td>UDP. Slow; pair with <code>--top-ports</code></td></tr>
+          <tr><td><code>-sA</code></td><td>ACK. Maps firewall rules</td></tr>
+          <tr><td><code>-sF</code> <code>-sN</code> <code>-sX</code></td><td>FIN, NULL, Xmas. RST means closed</td></tr>
+        </tbody></table></div>
+
+        <h3>Ports</h3>
+        <div class="tbl"><table><tbody>
+          <tr><td><code>-p 22,80,443</code></td><td>A list</td></tr>
+          <tr><td><code>-p 1-1024</code></td><td>A range</td></tr>
+          <tr><td><code>-p-</code></td><td>All 65,535 ports</td></tr>
+          <tr><td><code>-p U:53,T:22</code></td><td>Per protocol (with <code>-sU -sS</code>)</td></tr>
+          <tr><td><code>-F</code></td><td>Top 100 ports</td></tr>
+          <tr><td><code>--top-ports 20</code></td><td>Top N ports (default is 1,000)</td></tr>
+        </tbody></table></div>
+
+        <h3>Detection and output</h3>
+        <div class="tbl"><table><tbody>
+          <tr><td><code>-sV</code></td><td>Service and version detection</td></tr>
+          <tr><td><code>-sC</code></td><td>Default NSE scripts (<code>-sCV</code> combines both)</td></tr>
+          <tr><td><code>-O</code></td><td>OS detection (needs root)</td></tr>
+          <tr><td><code>-A</code></td><td><code>-sV -sC -O --traceroute</code></td></tr>
+          <tr><td><code>-T0</code>…<code>-T5</code></td><td>Timing: paranoid, sneaky, polite, normal, aggressive, insane</td></tr>
+          <tr><td><code>--reason</code></td><td>Show why each port got its state, with TTL</td></tr>
+          <tr><td><code>--open</code></td><td>Only show open (or possibly open) ports</td></tr>
+          <tr><td><code>-v</code></td><td>Verbose progress</td></tr>
+          <tr><td><code>-oN f</code> <code>-oG f</code> <code>-oA base</code></td><td>Save normal, grepable, or all formats (read with <code>cat</code>)</td></tr>
+        </tbody></table></div>
+
+        <h3>Exam tips</h3>
+        <ul class="tips">
+          <li><code>sudo</code> changes everything: <code>-sS</code>, <code>-sU</code> and <code>-O</code> need root, and discovery switches from TCP connects to ICMP plus raw TCP probes.</li>
+          <li>If a sweep misses a host you expect, scan it with <code>-Pn</code>.</li>
+          <li>Default scans cover 1,000 ports. Services on high ports only show with <code>-p-</code>.</li>
+          <li>TTL hints at the OS: about 64 for Linux, 128 for Windows, 255 for printers and network gear, minus one per router.</li>
+          <li>Windows answers FIN, NULL and Xmas probes with RST, so those scans show its open ports as closed.</li>
+        </ul>
+      </section>
+
+      <section class="tabpanel" id="tab-quiz" role="tabpanel" aria-labelledby="t-quiz" hidden>
+        <div class="row"><h2>Theory quiz</h2><button id="quizReset" class="linkbtn" type="button">Reset quiz</button></div>
+        <p class="lede">Concept questions that come up in lab tests. <span id="quizScore"></span></p>
+        <div id="quizList"></div>
+      </section>
+    </aside>
+  </main>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const ATTACKER='10.10.14.7', NET='10.10.10.';
+const store={
+  get(k,d){try{const v=localStorage.getItem('nmaprange:'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem('nmaprange:'+k,JSON.stringify(v))}catch(e){}}
+};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad2=n=>String(n).padStart(2,'0');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function stamp(d){return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth()+1)}-${pad2(d.getUTCDate())} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())} UTC`}
+function hm(d){return `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const pick=(r,a)=>a[Math.floor(r()*a.length)];
+
+/* ---------- port tables ---------- */
+const TCPN={21:'ftp',22:'ssh',23:'telnet',25:'smtp',53:'domain',80:'http',88:'kerberos-sec',110:'pop3',111:'rpcbind',135:'msrpc',139:'netbios-ssn',143:'imap',389:'ldap',443:'https',445:'microsoft-ds',464:'kpasswd5',515:'printer',587:'submission',593:'http-rpc-epmap',631:'ipp',636:'ldapssl',993:'imaps',995:'pop3s',1433:'ms-sql-s',1723:'pptp',2049:'nfs',3000:'ppp',3268:'globalcatLDAP',3269:'globalcatLDAPssl',3306:'mysql',3389:'ms-wbt-server',5432:'postgresql',5900:'vnc',8000:'http-alt',8080:'http-proxy',8443:'https-alt',9100:'jetdirect'};
+const UDPN={53:'domain',67:'dhcps',68:'dhcpc',69:'tftp',88:'kerberos-sec',111:'rpcbind',123:'ntp',135:'msrpc',137:'netbios-ns',138:'netbios-dgm',139:'netbios-ssn',161:'snmp',162:'snmptrap',389:'ldap',445:'microsoft-ds',500:'isakmp',514:'syslog',520:'route',631:'ipp',1434:'ms-sql-m',1900:'upnp',4500:'nat-t-ike',5353:'zeroconf',49152:'unknown'};
+const NAME_TO_PORT={};for(const [p,n] of Object.entries(TCPN)) if(!(n in NAME_TO_PORT)) NAME_TO_PORT[n]=+p;
+const TOP20=[80,23,443,21,22,25,3389,110,445,139,143,53,135,3306,8080,1723,111,995,993,5900];
+const TOP100_REST=[7,9,13,26,37,79,81,88,106,113,119,144,179,199,389,427,444,465,513,514,515,543,544,548,554,587,631,646,873,990,1025,1026,1027,1028,1029,1110,1433,1720,1755,1900,2000,2001,2049,2121,2717,3000,3128,3986,4899,5000,5009,5051,5060,5101,5190,5357,5432,5631,5666,5800,6000,6001,6646,7070,8000,8008,8009,8081,8443,8888,9100,9999,10000,32768,49152,49153,49154,49155,49156,49157];
+const TOP100=[...TOP20,...TOP100_REST];
+const TOP1000=new Set([...TOP100,464,593,636,3268,3269,1723,5985,5986,8081,8082,9090,1521,6379,27017,11211,5901,2222,4444,6667]);
+const UDP_TOP=[631,161,137,123,138,1434,445,135,67,53,139,500,68,520,1900,4500,514,49152,162,69,5353,111,88,389,2049,1645,1812,1813,5060,177];
+const UDP_TOPS=new Set(UDP_TOP);
+
+/* ---------- lab generation ---------- */
+const SSH_U=[{v:'OpenSSH 8.2p1 Ubuntu 4ubuntu0.11 (Ubuntu Linux; protocol 2.0)',s:'8.2p1'},{v:'OpenSSH 8.9p1 Ubuntu 3ubuntu0.10 (Ubuntu Linux; protocol 2.0)',s:'8.9p1'},{v:'OpenSSH 9.6p1 Ubuntu 3ubuntu13.5 (Ubuntu Linux; protocol 2.0)',s:'9.6p1'}];
+const SSH_D=[{v:'OpenSSH 7.9p1 Debian 10+deb10u4 (protocol 2.0)',s:'7.9p1'},{v:'OpenSSH 8.4p1 Debian 5+deb11u3 (protocol 2.0)',s:'8.4p1'},{v:'OpenSSH 9.2p1 Debian 2+deb12u3 (protocol 2.0)',s:'9.2p1'}];
+const LINUX_INFO='OS: Linux; CPE: cpe:/o:linux:linux_kernel';
+const OS={
+  linux:{device:'general purpose',running:'Linux 4.X|5.X',cpe:'cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5',details:'Linux 4.15 - 5.19',guess:'Linux 4.X|5.X (95%)',guesses:'Linux 4.15 - 5.19 (95%), Linux 5.0 - 5.14 (93%), Linux 2.6.32 (91%)'},
+  router:{device:'general purpose|router',running:'Linux 3.X|4.X',cpe:'cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:4',details:'Linux 3.2 - 4.14',guess:'Linux 3.X|4.X (94%)',guesses:'Linux 3.2 - 4.14 (94%), OpenWrt 21.02 (Linux 5.4) (92%), Linux 2.6.32 - 3.10 (90%)'},
+  winsrv:{device:'general purpose',running:'Microsoft Windows 2019',cpe:'cpe:/o:microsoft:windows_server_2019',details:'Microsoft Windows Server 2019',guess:'Microsoft Windows 2019|10 (96%)',guesses:'Microsoft Windows Server 2019 (96%), Microsoft Windows 10 1709 - 21H2 (93%), Microsoft Windows Server 2016 (91%)'},
+  win10:{device:'general purpose',running:'Microsoft Windows 10',cpe:'cpe:/o:microsoft:windows_10',details:'Microsoft Windows 10 1709 - 21H2',guess:'Microsoft Windows 10|2016 (97%)',guesses:'Microsoft Windows 10 1709 - 21H2 (97%), Microsoft Windows 10 1607 (93%), Microsoft Windows Server 2016 (91%)'},
+  printer:{device:'printer',running:'HP embedded',cpe:'cpe:/h:hp:laserjet_pro_m404dn',details:'HP LaserJet Pro M404dn printer',guess:'HP embedded (95%)',guesses:'HP LaserJet Pro M404dn printer (95%), HP LaserJet M507 printer (91%)'}
+};
+function hex(r,n){let s='';for(let i=0;i<n;i++)s+=(i?':':'')+Math.floor(r()*256).toString(16).padStart(2,'0');return s}
+function sshKeys(r){return ['| ssh-hostkey: ',`|   3072 ${hex(r,16)} (RSA)`,`|   256 ${hex(r,16)} (ECDSA)`,`|_  256 ${hex(r,16)} (ED25519)`]}
+function H(o){return Object.assign({icmp:true,fw:'none',win:false,ttl:63,tcp:{},udp:{},hostScripts:null,svcInfo:null},o)}
+function P(svc,version,scripts,state){return {state:state||'open',svc,version:version||'',scripts:scripts||[]}}
+
+function mkRouter(r){
+  return H({name:'gw.corp.lab',os:OS.router,svcInfo:LINUX_INFO,
+    tcp:{22:P('ssh','Dropbear sshd 2020.81 (protocol 2.0)',['| ssh-hostkey: ',`|   2048 ${hex(r,16)} (RSA)`,`|_  256 ${hex(r,16)} (ECDSA)`]),
+         53:P('domain','dnsmasq 2.85',['| dns-nsid: ','|_  bind.version: dnsmasq-2.85']),
+         80:P('http','lighttpd 1.4.59',['|_http-title: Router Login','|_http-server-header: lighttpd/1.4.59'])},
+    udp:{53:P('domain','dnsmasq 2.85'),67:P('dhcps','',[],'open|filtered'),161:P('snmp','SNMPv1 server; net-snmp SNMPv3 server (public)',['| snmp-info: ','|   enterprise: net-snmp','|_  engineIDFormat: unknown'])}});
+}
+function mkWeb(r){
+  const ssh=pick(r,SSH_U);
+  const web=pick(r,[{v:'Apache httpd 2.4.52 ((Ubuntu))',h:'Apache/2.4.52 (Ubuntu)'},{v:'Apache httpd 2.4.58 ((Ubuntu))',h:'Apache/2.4.58 (Ubuntu)'},{v:'nginx 1.18.0 (Ubuntu)',h:'nginx/1.18.0 (Ubuntu)'},{v:'nginx 1.24.0 (Ubuntu)',h:'nginx/1.24.0 (Ubuntu)'}]);
+  const title=pick(r,['Corp Intranet','Staff Portal - Sign In','IT Helpdesk']);
+  return H({name:'web01.corp.lab',os:OS.linux,svcInfo:LINUX_INFO,sshShort:ssh.s,webSoft:web.v.split(' ')[0],webTitle:title,
+    tcp:{22:P('ssh',ssh.v,sshKeys(r)),80:P('http',web.v,[`|_http-title: ${title}`,`|_http-server-header: ${web.h}`]),
+         443:P('ssl/http',web.v,[`|_http-title: ${title}`,'| ssl-cert: Subject: commonName=web01.corp.lab','| Not valid before: 2026-01-12T09:14:03','|_Not valid after:  2027-01-12T09:14:03'])}});
+}
+function mkDC(r){
+  const d=new Date(), iso=d.toISOString().slice(0,19);
+  const ldap='Microsoft Windows Active Directory LDAP (Domain: corp.lab0., Site: Default-First-Site-Name)';
+  return H({name:'dc01.corp.lab',os:OS.winsrv,fw:'drop',win:true,ttl:127,svcInfo:'Host: DC01; OS: Windows; CPE: cpe:/o:microsoft:windows',
+    tcp:{53:P('domain','Simple DNS Plus'),88:P('kerberos-sec',`Microsoft Windows Kerberos (server time: ${iso.replace('T',' ')}Z)`),135:P('msrpc','Microsoft Windows RPC'),
+         139:P('netbios-ssn','Microsoft Windows netbios-ssn'),389:P('ldap',ldap),445:P('microsoft-ds?',''),464:P('kpasswd5?',''),
+         593:P('ncacn_http','Microsoft Windows RPC over HTTP 1.0'),636:P('tcpwrapped',''),3268:P('ldap',ldap),3269:P('tcpwrapped','')},
+    udp:{53:P('domain','Simple DNS Plus'),88:P('kerberos-sec','',[],'open|filtered'),123:P('ntp','NTP v3'),389:P('ldap','Microsoft Windows Active Directory LDAP')},
+    hostScripts:['| smb2-security-mode: ','|   3:1:1: ','|_    Message signing enabled and required','| smb2-time: ',`|   date: ${iso}`,'|_  start_date: N/A']});
+}
+function mkDB(r){
+  const ssh=pick(r,SSH_D), h=H({name:'db01.corp.lab',os:OS.linux,svcInfo:LINUX_INFO,tcp:{22:P('ssh',ssh.v,sshKeys(r))}});
+  if(r()<.55) h.tcp[3306]=P('mysql','MySQL 8.0.39',['| mysql-info: ','|   Protocol: 10','|   Version: 8.0.39','|   Thread ID: 12','|_  Status: Autocommit']);
+  else h.tcp[5432]=P('postgresql','PostgreSQL DB 13.x - 16.x',['| ssl-cert: Subject: commonName=db01.corp.lab','|_ssl-date: TLS randomness does not represent time']);
+  if(r()<.5){h.tcp[111]=P('rpcbind','2-4 (RPC #100000)',['| rpcinfo: ','|   program version    port/proto  service','|   100000  2,3,4        111/tcp   rpcbind','|_  100000  2,3,4        111/udp   rpcbind']);h.udp[111]=P('rpcbind','2-4 (RPC #100000)')}
+  if(r()<.4) h.tcp[8080]=P('http','Apache Tomcat 9.0.85',['|_http-title: Apache Tomcat/9.0.85']);
+  return h;
+}
+function mkFTP(r){
+  const v=pick(r,['vsftpd 3.0.3','vsftpd 3.0.5','vsftpd 2.3.4']), anon=r()<.6, ssh=pick(r,SSH_D);
+  const sc=anon?['| ftp-anon: Anonymous FTP login allowed (FTP code 230)','|_drwxr-xr-x    2 ftp      ftp          4096 Sep 30 11:12 pub','| ftp-syst: ','|   STAT: ','| FTP server status:',`|      Connected to ::ffff:${ATTACKER}`,'|      Logged in as ftp','|      TYPE: ASCII','|      No session bandwidth limit','|      Session timeout in seconds is 300','|      Control connection is plain text','|      Data connections will be plain text',`|      ${v} - secure, fast, stable`,'|_End of status']:[];
+  return H({name:'files.corp.lab',os:OS.linux,svcInfo:'OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel',ftpVer:v,anon,
+    tcp:{21:P('ftp',v,sc),22:P('ssh',ssh.v,sshKeys(r))}});
+}
+function mkWS(r){
+  const n=1000+Math.floor(r()*8999), short=`WS-${n}`;
+  return H({name:`ws-${n}.corp.lab`,short,os:OS.win10,icmp:false,fw:'drop',win:true,ttl:127,svcInfo:'OS: Windows; CPE: cpe:/o:microsoft:windows',
+    tcp:{135:P('msrpc','Microsoft Windows RPC'),139:P('netbios-ssn','Microsoft Windows netbios-ssn'),445:P('microsoft-ds?',''),
+         3389:P('ms-wbt-server','Microsoft Terminal Services',['| rdp-ntlm-info: ','|   Target_Name: CORP',`|   NetBIOS_Computer_Name: ${short}`,'|   DNS_Domain_Name: corp.lab','|_  Product_Version: 10.0.19045'])},
+    hostScripts:['| smb2-security-mode: ','|   3:1:1: ','|_    Message signing enabled but not required']});
+}
+function mkDev(r){
+  const ssh=pick(r,SSH_U); let hp;
+  do{hp=10001+Math.floor(r()*50000)}while(TOP1000.has(hp)||UDP_TOPS.has(hp));
+  const app=pick(r,[{v:'SimpleHTTPServer 0.6 (Python 3.10.12)',t:'Directory listing for /'},{v:'Werkzeug httpd 3.0.1 (Python 3.11.6)',t:'Build Dashboard'},{v:'Node.js Express framework',t:'Staging API'}]);
+  return H({name:'dev-sandbox.corp.lab',os:OS.linux,svcInfo:LINUX_INFO,highPort:hp,appTitle:app.t,
+    tcp:{22:P('ssh',ssh.v,sshKeys(r)),[hp]:P('http',app.v,[`|_http-title: ${app.t}`])}});
+}
+function mkMail(r){
+  const ssh=pick(r,SSH_U);
+  return H({name:'mail.corp.lab',os:OS.linux,svcInfo:'Host:  mail.corp.lab; OS: Linux; CPE: cpe:/o:linux:linux_kernel',
+    tcp:{22:P('ssh',ssh.v,sshKeys(r)),25:P('smtp','Postfix smtpd',['|_smtp-commands: mail.corp.lab, PIPELINING, SIZE 10240000, VRFY, ETRN, STARTTLS, ENHANCEDSTATUSCODES, 8BITMIME, DSN, SMTPUTF8, CHUNKING']),
+         110:P('pop3','Dovecot pop3d'),143:P('imap','Dovecot imapd (Ubuntu)'),587:P('smtp','Postfix smtpd'),993:P('ssl/imap','Dovecot imapd (Ubuntu)'),995:P('ssl/pop3','Dovecot pop3d')}});
+}
+function mkPrinter(r){
+  return H({name:'prn-floor2.corp.lab',os:OS.printer,ttl:254,svcInfo:'Device: printer',
+    tcp:{80:P('http','HP HTTP Server; HP LaserJet Pro M404dn',['|_http-title: HP LaserJet Pro M404dn']),443:P('ssl/http','HP HTTP Server; HP LaserJet Pro M404dn'),515:P('printer',''),631:P('ipp','HP Embedded Web Server'),9100:P('jetdirect?','')},
+    udp:{161:P('snmp','SNMPv1 server (public)')}});
+}
+function buildLab(seed){
+  const r=mulberry32(seed), used=new Set([0,1,255]);
+  const oct=()=>{let o;do{o=2+Math.floor(r()*230)}while(used.has(o));used.add(o);return o};
+  const lab={seed,hosts:{},byName:{}};
+  const add=(key,h,o)=>{h.ip=NET+o;h.key=key;h.lat=0.022+r()*0.03;lab[key]=h;lab.hosts[h.ip]=h;lab.byName[h.name]=h.ip;lab.byName[h.name.split('.')[0]]=h.ip;return h};
+  add('router',mkRouter(r),1);
+  add('web',mkWeb(r),oct()); add('dc',mkDC(r),oct()); add('db',mkDB(r),oct()); add('ftp',mkFTP(r),oct());
+  add('ws',mkWS(r),oct()); add('dev',mkDev(r),oct());
+  if(r()<.6) add('mail',mkMail(r),oct());
+  if(r()<.6) add('printer',mkPrinter(r),oct());
+  return lab;
+}
+
+/* ---------- scanning engine ---------- */
+let lab;
+function tcpBase(h,p){if(!h)return 'filtered';const rec=h.tcp[p];if(rec)return rec.state;return h.fw==='none'?'closed':'filtered'}
+function discover(h,o,root){
+  if(o.Pn) return {up:true,reason:'user-set'};
+  if(!h) return {up:false};
+  if(o.probes&&o.probes.length){
+    for(const pr of o.probes){
+      if(pr.type==='E'&&h.icmp) return {up:true,reason:`echo-reply ttl ${h.ttl}`};
+      if(pr.type==='S'||pr.type==='A') for(const p of pr.ports){const st=tcpBase(h,p);if(st==='filtered')continue;return {up:true,reason:`${pr.type==='S'&&st==='open'?'syn-ack':'reset'} ttl ${h.ttl}`}}
+      if(pr.type==='U') for(const p of pr.ports){const u=h.udp[p];if(u&&u.state==='open')return {up:true,reason:`udp-response ttl ${h.ttl}`};if(!u&&h.fw==='none')return {up:true,reason:`port-unreach ttl ${h.ttl}`}}
+    }
+    return {up:false};
+  }
+  if(root){
+    if(h.icmp) return {up:true,reason:`echo-reply ttl ${h.ttl}`};
+    if(tcpBase(h,443)==='open') return {up:true,reason:`syn-ack ttl ${h.ttl}`};
+    if(h.fw==='none') return {up:true,reason:`reset ttl ${h.ttl}`};
+    return {up:false};
+  }
+  for(const p of [80,443]){const st=tcpBase(h,p);if(st==='open')return {up:true,reason:'syn-ack'};if(st==='closed')return {up:true,reason:'conn-refused'}}
+  return {up:false};
+}
+function mergeRanges(rs){rs=rs.slice().sort((a,b)=>a[0]-b[0]);const out=[];for(const r of rs){const l=out[out.length-1];if(l&&r[0]<=l[1]+1)l[1]=Math.max(l[1],r[1]);else out.push([r[0],r[1]])}return out}
+function parsePortSpec(spec){
+  const tcp=[],udp=[];let mode='any';
+  for(let part of String(spec).split(',')){
+    part=part.trim();if(!part)return null;
+    const m=part.match(/^([TtUu]):(.*)$/);if(m){mode=m[1].toUpperCase()==='T'?'tcp':'udp';part=m[2];if(!part)continue}
+    let a,b;
+    if(part==='-'){a=1;b=65535}
+    else if(/^\d+$/.test(part)){a=b=+part}
+    else if(/^\d*-\d*$/.test(part)){const [x,y]=part.split('-');a=x===''?1:+x;b=y===''?65535:+y}
+    else{const p=NAME_TO_PORT[part.toLowerCase()];if(!p)return null;a=b=p}
+    if(a<0||b>65535||a>b)return null;
+    if(mode!=='udp')tcp.push([a,b]);if(mode!=='tcp')udp.push([a,b]);
+  }
+  return {tcp:mergeRanges(tcp),udp:mergeRanges(udp)};
+}
+function expandRanges(rs,max){const out=[];for(const [a,b] of rs)for(let p=a;p<=b&&out.length<max;p++)out.push(p);return out}
+function rangesSet(rs){let count=0;for(const [a,b] of rs)count+=b-a+1;return {count,has:p=>rs.some(([a,b])=>p>=a&&p<=b),list:count<=4096?expandRanges(rs,4096):null}}
+function topSet(proto,n){
+  const ordered=proto==='tcp'?TOP100:UDP_TOP, big=proto==='tcp'?TOP1000:UDP_TOPS;
+  if(n<=ordered.length){const l=ordered.slice(0,n).sort((a,b)=>a-b),s=new Set(l);return {count:n,has:p=>s.has(p),list:l}}
+  if(n>=65535)return {count:65535,has:()=>true,list:null};
+  return {count:n,has:p=>big.has(p),list:null};
+}
+function mapState(h,proto,type,base){
+  if(proto==='udp'||type==='S'||type==='T')return base;
+  if(type==='A')return base==='filtered'?'filtered':'unfiltered';
+  if(base==='filtered')return 'open|filtered';
+  if(base==='closed')return 'closed';
+  return h&&h.win?'closed':'open|filtered';
+}
+function scanProto(h,proto,type,pset){
+  const listed=h?(proto==='tcp'?h.tcp:h.udp):{};const entries=[];let inSet=0;
+  for(const k of Object.keys(listed)){const port=+k;if(!pset.has(port))continue;inSet++;entries.push({port,proto,type,rec:listed[k],state:mapState(h,proto,type,listed[k].state)})}
+  const base=proto==='tcp'?(h&&h.fw==='none'?'closed':'filtered'):(h&&h.fw==='none'?'closed':'open|filtered');
+  return {proto,type,set:pset,entries:entries.sort((a,b)=>a.port-b.port),defState:mapState(h,proto,type,base),defCount:pset.count-inSet};
+}
+function reasonWord(type,state){
+  if(state==='filtered'||state==='open|filtered')return 'no-response';
+  if(type==='T')return state==='open'?'syn-ack':'conn-refused';
+  if(type==='U')return state==='open'?'udp-response':'port-unreach';
+  return state==='open'?'syn-ack':'reset';
+}
+function reasonFull(type,state,h){const w=reasonWord(type,state);return (w==='no-response'||type==='T'||!h)?w:`${w} ttl ${h.ttl}`}
+const defaultName=(proto,p)=>(proto==='udp'?UDPN[p]:TCPN[p])||'unknown';
+function hostTime(res,o){
+  let t=0.12;
+  for(const r of res){
+    let resp=0,silent=0,udpClosed=0,open=0;
+    const add=(s,n)=>{if(!n)return;if(s==='open')open+=n;if(r.proto==='udp'&&s==='closed')udpClosed+=n;else if(s==='filtered'||s==='open|filtered')silent+=n;else resp+=n};
+    for(const e of r.entries)add(e.state,1);add(r.defState,r.defCount);
+    if(o.T<=2){t+=(resp+silent*2+udpClosed)*[300,15,0.4][o.T];continue}
+    const mult=[0,0,0,1,0.6,0.45][o.T];
+    t+=(resp*0.0007+silent*0.0032+udpClosed*1.02+(r.proto==='udp'?open*0.05:0))*mult;
+    if(o.sV&&open)t+=5.4+open*(r.proto==='udp'?2.5:0.35);
+    if(o.sC&&open)t+=open*0.3;
+  }
+  if(o.O)t+=1.9;
+  return t;
+}
+function table(cols,rows){
+  const w=cols.map((c,i)=>Math.max(c.length,...rows.map(r=>String(r[i]).length)));
+  const f=r=>r.map((c,i)=>i===r.length-1?String(c):String(c).padEnd(w[i])).join(' ').replace(/\s+$/,'');
+  return [f(cols),...rows.map(f)];
+}
+function formatHost(t,h,d,res,o){
+  const disp=t.disp, L=[];
+  const lat=h?`${h.lat.toFixed(3)}s latency`:null;
+  let rows=[],notShown=[],ignored=[],total=0;
+  for(const r of res){
+    total+=r.set.count;
+    const counts={};for(const e of r.entries)counts[e.state]=(counts[e.state]||0)+1;
+    if(r.defCount>0)counts[r.defState]=(counts[r.defState]||0)+r.defCount;
+    const collapsed=new Set(Object.keys(counts).filter(s=>counts[s]>25));
+    for(const s of collapsed){notShown.push(`${counts[s]} ${s} ${r.proto} ports (${reasonWord(r.type,s)})`);ignored.push(`${s} (${counts[s]})`)}
+    let shown=r.entries.filter(e=>!collapsed.has(e.state));
+    if(!collapsed.has(r.defState)&&r.defCount>0&&r.set.list){const lp=new Set(r.entries.map(e=>e.port));for(const p of r.set.list)if(!lp.has(p))shown.push({port:p,proto:r.proto,type:r.type,state:r.defState,rec:null})}
+    if(o.open)shown=shown.filter(e=>e.state==='open'||e.state==='open|filtered'||e.state==='unfiltered');
+    rows.push(...shown.sort((a,b)=>a.port-b.port));
+  }
+  if(o.open&&!rows.length)return null;
+  const tcpRes=res.find(r=>r.proto==='tcp');
+  const hasOpen=!!tcpRes&&tcpRes.entries.some(e=>e.state==='open');
+  const hasClosed=!!tcpRes&&(tcpRes.entries.some(e=>e.state==='closed')||(tcpRes.defState==='closed'&&tcpRes.defCount>0));
+  if(o.O&&h&&!(hasOpen&&hasClosed))L.push('Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port');
+  L.push(`Nmap scan report for ${disp}`);
+  if(o.reason)L.push(lat?`Host is up, received ${d.reason} (${lat}).`:`Host is up, received ${d.reason}.`);
+  else L.push(lat?`Host is up (${lat}).`:'Host is up.');
+  if(!rows.length&&notShown.length)L.push(`All ${total} scanned ports on ${disp} are in ignored states.`);
+  if(notShown.length)L.push(`Not shown: ${notShown.join(', ')}`);
+  if(rows.length){
+    const cols=['PORT','STATE','SERVICE'];if(o.reason)cols.push('REASON');if(o.sV)cols.push('VERSION');
+    const data=rows.map(e=>{const det=o.sV&&e.state==='open'&&e.rec;const a=[`${e.port}/${e.proto}`,e.state,det?e.rec.svc:defaultName(e.proto,e.port)];if(o.reason)a.push(reasonFull(e.type,e.state,h));if(o.sV)a.push(det?e.rec.version:'');return a});
+    const lines=table(cols,data);L.push(lines[0]);
+    rows.forEach((e,i)=>{L.push(lines[i+1]);if(o.sC&&e.state==='open'&&e.rec&&e.rec.scripts.length)L.push(...e.rec.scripts)});
+  }
+  if(o.O){
+    if(!h)L.push('Too many fingerprints match this host to give specific OS details');
+    else{const s=h.os;
+      if(hasOpen&&hasClosed)L.push(`Device type: ${s.device}`,`Running: ${s.running}`,`OS CPE: ${s.cpe}`,`OS details: ${s.details}`,'Network Distance: 2 hops');
+      else L.push(`Device type: ${s.device}`,`Running (JUST GUESSING): ${s.guess}`,`OS CPE: ${s.cpe}`,`Aggressive OS guesses: ${s.guesses}`,'No exact OS matches for host (test conditions non-ideal).','Network Distance: 2 hops');
+    }
+  }
+  const openTcp=rows.filter(e=>e.proto==='tcp'&&e.state==='open');
+  if(o.sV&&h&&h.svcInfo&&openTcp.length)L.push(`Service Info: ${h.svcInfo}`);
+  if(o.sC&&h&&h.hostScripts&&openTcp.some(e=>e.port===445))L.push('','Host script results:',...h.hostScripts);
+  if(o.traceroute&&h){
+    const tp=openTcp[0];
+    L.push('',`TRACEROUTE (using port ${tp?tp.port:80}/tcp)`,...table(['HOP','RTT','ADDRESS'],[['1',`${(0.8+h.lat*12).toFixed(2)} ms`,'10.10.14.1'],['2',`${(h.lat*1000).toFixed(2)} ms`,disp]]));
+  }
+  return {lines:L,rows,ignored};
+}
+
+const SCAN_INFO={
+  S:{name:'SYN scan',v:'SYN Stealth Scan',about:'Sends a SYN and reads the reply without finishing the handshake. Nmap uses it by default when it runs as root.'},
+  T:{name:'Connect scan',v:'Connect Scan',about:'Asks the operating system to open a full TCP connection with connect(). Nmap falls back to it without root, and the target can log it.'},
+  U:{name:'UDP scan',v:'UDP Scan',about:'Sends UDP datagrams, with a protocol payload where nmap has one. Silence is ambiguous, and ICMP rate limits make it slow.'},
+  A:{name:'ACK scan',v:'ACK Scan',about:'Sends a bare ACK. It maps firewall rules: it tells filtered from unfiltered, never open from closed.'},
+  F:{name:'FIN scan',v:'FIN Scan',about:'Sends only FIN. Under RFC 793 a closed port answers RST and an open port stays silent.'},
+  N:{name:'NULL scan',v:'NULL Scan',about:'Sends a segment with no flags. Same logic as FIN: RST means closed, silence means open or filtered.'},
+  X:{name:'Xmas scan',v:'XMAS Scan',about:'Sets FIN, PSH and URG at once. Same logic as FIN and NULL.'}
+};
+function probeSteps(type,state){
+  const lost=l=>[['out',l],['lost','no reply'],['out',l+' (retry)'],['lost','no reply']];
+  switch(type){
+    case 'S':return state==='open'?[['out','SYN'],['in','SYN/ACK'],['out','RST']]:state==='closed'?[['out','SYN'],['in','RST/ACK']]:lost('SYN');
+    case 'T':return state==='open'?[['out','SYN'],['in','SYN/ACK'],['out','ACK'],['out','RST/ACK']]:state==='closed'?[['out','SYN'],['in','RST/ACK']]:lost('SYN');
+    case 'U':return state==='open'?[['out','UDP + protocol payload'],['in','UDP reply']]:state==='closed'?[['out','UDP'],['in','ICMP port unreachable (3/3)']]:lost('UDP');
+    case 'A':return state==='unfiltered'?[['out','ACK'],['in','RST']]:lost('ACK');
+    default:{const l=type==='F'?'FIN':type==='N'?'no flags':'FIN PSH URG';return state==='closed'?[['out',l],['in','RST/ACK']]:lost(l)}
+  }
+}
+function probeWhy(e){
+  const t=e.type,s=e.state;
+  if(t==='S')return s==='open'?'SYN/ACK means something is listening. Nmap sends RST instead of the final ACK, so the connection never opens.':s==='closed'?'RST means the host is reachable but nothing listens on this port.':'No reply, even after a retry. A firewall dropped the probe, so nmap cannot see what is behind it.';
+  if(t==='T')return s==='open'?'The full handshake completes, so the service may log your connection. Nmap closes it right away.':s==='closed'?'The target answered RST, so connect() failed with "connection refused".':'connect() timed out with no answer. A firewall dropped the SYN.';
+  if(t==='U')return s==='open'?'The service answered the protocol payload, which proves the port is open.':s==='closed'?'ICMP port unreachable (type 3, code 3) is the only definite "closed" signal UDP gets.':'Silence could mean a service that ignored the probe or a firewall that dropped it. Nmap reports open|filtered.';
+  if(t==='A')return s==='unfiltered'?'RST means the probe got through the firewall. An ACK scan cannot say whether the port is open or closed.':'No reply. A stateful firewall dropped the unsolicited ACK.';
+  if(s==='closed'&&e.rec&&e.rec.state==='open')return 'This port is really open. Windows ignores RFC 793 and answers RST anyway, so FIN, NULL and Xmas scans report it as closed.';
+  return s==='closed'?'A closed port answers RST, as RFC 793 requires.':'An open port drops this probe silently, and so does a firewall. Nmap cannot tell which.';
+}
+function discoverySteps(h,root,d){
+  const steps=root?[['out','ICMP echo request'],['out','TCP SYN → :443'],['out','TCP ACK → :80'],['out','ICMP timestamp request']]:[['out','connect() SYN → :80'],['out','connect() SYN → :443']];
+  if(!d.up){steps.push(['lost','no reply to any probe']);return steps}
+  if(root){if(h.icmp)steps.push(['in','ICMP echo reply']);else if(tcpBase(h,443)==='open')steps.push(['in','SYN/ACK from :443']);else steps.push(['in','RST (answer to the ACK)'])}
+  else{const p=tcpBase(h,80)!=='filtered'?80:443;steps.push(['in',tcpBase(h,p)==='open'?`SYN/ACK from :${p}`:`RST/ACK from :${p}`])}
+  return steps;
+}
+
+function parseNmap(args){
+  const o={scanTypes:new Set(),sV:false,sC:false,O:false,A:false,Pn:false,sn:false,n:false,v:0,open:false,reason:false,portSpec:null,top:null,T:3,probes:[],traceroute:false,outs:[],help:false,targets:[]};
+  const TN={paranoid:0,sneaky:1,polite:2,normal:3,aggressive:4,insane:5};
+  const need=f=>({error:`nmap: option '${f}' requires an argument\nSee the output of nmap -h for a summary of options.`});
+  for(let i=0;i<args.length;i++){
+    const a=args[i];let m;
+    if(a==='-h'||a==='--help'){o.help=true;continue}
+    if((m=a.match(/^-s([A-Za-z]+)$/))){
+      for(const c of m[1]){
+        if('STUAFNX'.includes(c))o.scanTypes.add(c);
+        else if(c==='V')o.sV=true;else if(c==='C')o.sC=true;else if(c==='n'||c==='P')o.sn=true;
+        else return {error:`Scan type -s${c} is not part of this practice range. Use -sS, -sT, -sU, -sA, -sF, -sN, -sX, -sV, -sC or -sn.`};
+      }
+      continue;
+    }
+    if(a==='-A'){o.A=o.sV=o.sC=o.O=o.traceroute=true;continue}
+    if(a==='-O'){o.O=true;continue}
+    if(a==='-Pn'||a==='-P0'){o.Pn=true;continue}
+    if((m=a.match(/^-P([ESAU])(.*)$/))){let ports=null;if(m[2]){const ps=parsePortSpec(m[2]);if(!ps)return {error:`Bad port list for -P${m[1]}: "${m[2]}"\nQUITTING!`};ports=expandRanges(m[1]==='U'?ps.udp:ps.tcp,50)}o.probes.push({type:m[1],ports:ports||(m[1]==='U'?[40125]:[80])});continue}
+    if(a==='-n'){o.n=true;continue}
+    if(a==='-R')continue;
+    if(/^-v+$/.test(a)){o.v+=a.length-1;continue}
+    if(a==='--open'){o.open=true;continue}
+    if(a==='--reason'){o.reason=true;continue}
+    if(a==='--traceroute'){o.traceroute=true;continue}
+    if(a==='-F'){o.top=100;continue}
+    if(a==='-p'){if(i+1>=args.length)return need('-p');o.portSpec=args[++i];continue}
+    if(a.startsWith('-p')){o.portSpec=a.slice(2);continue}
+    if(a==='--top-ports'||a.startsWith('--top-ports=')){const v=a.includes('=')?a.split('=')[1]:args[++i];const n=parseInt(v,10);if(!(n>0))return {error:'--top-ports needs a positive number, for example --top-ports 20\nQUITTING!'};o.top=Math.min(n,65535);continue}
+    if((m=a.match(/^-T([0-5])$/))){o.T=+m[1];continue}
+    if((m=a.match(/^-T([a-z]+)$/))&&m[1] in TN){o.T=TN[m[1]];continue}
+    if((m=a.match(/^-o([NGXA])$/))){if(i+1>=args.length)return need(a);o.outs.push({fmt:m[1],name:args[++i]});continue}
+    if(a==='--script'){i++;o.sC=true;continue}
+    if(a.startsWith('--script=')){o.sC=true;continue}
+    if(['--min-rate','--max-rate','--max-retries','--host-timeout','--scan-delay','--max-rtt-timeout','--source-port','-g','-e'].includes(a)){i++;continue}
+    if(/^--(min-rate|max-rate|max-retries|host-timeout|scan-delay|max-rtt-timeout)=/.test(a))continue;
+    if(a==='-6')return {error:'This practice range only has IPv4 addresses.'};
+    if(a.startsWith('--'))return {error:`nmap: unrecognized option '${a}'\nSee the output of nmap -h for a summary of options.`};
+    if(a.startsWith('-'))return {error:`nmap: invalid option -- '${a.slice(1,2)}'\nSee the output of nmap -h for a summary of options.`};
+    o.targets.push(a);
+  }
+  return o;
+}
+const intToIp=n=>[n>>>24,(n>>>16)&255,(n>>>8)&255,n&255].join('.');
+function expandTarget(t){
+  const low=t.toLowerCase();
+  if(lab.byName[low])return {ips:[lab.byName[low]],name:low};
+  let m=t.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?:\/(\d{1,2}))?$/);
+  if(m){
+    const oc=m.slice(1,5).map(Number);if(oc.some(x=>x>255))return null;
+    const bits=m[5]===undefined?32:+m[5];if(bits>32)return null;if(bits<20)return {big:true};
+    const base=((oc[0]<<24)|(oc[1]<<16)|(oc[2]<<8)|oc[3])>>>0,size=2**(32-bits),start=Math.floor(base/size)*size,ips=[];
+    for(let i=0;i<size;i++)ips.push(intToIp(start+i));
+    return {ips};
+  }
+  m=t.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.([\d,-]+)$/);
+  if(m){
+    if([m[1],m[2],m[3]].some(x=>+x>255))return null;
+    const pre=`${+m[1]}.${+m[2]}.${+m[3]}.`,set=new Set();
+    for(const part of m[4].split(',')){
+      if(!part)return null;const r=part.split('-');if(r.length>2)return null;
+      const a=r[0]===''?0:+r[0],b=r.length===1?a:(r[1]===''?255:+r[1]);
+      if(a>255||b>255||a>b)return null;for(let x=a;x<=b;x++)set.add(x);
+    }
+    return {ips:[...set].sort((x,y)=>x-y).map(x=>pre+x)};
+  }
+  return null;
+}
+
+function nmapRun(args,root,cmdline){
+  if(!args.length)return {text:NMAP_HELP};
+  const o=parseNmap(args);
+  if(o.error)return {err:o.error};
+  if(o.help)return {text:NMAP_HELP};
+  const tcpTypes=[...o.scanTypes].filter(t=>t!=='U');
+  if(tcpTypes.length>1)return {err:'You specified more than one type of TCP scan.  Please choose only one of -sA, -b, -sT, -sF, -sI, -sM, -sN, -sS, -sW, and -sX\nQUITTING!'};
+  if(!root){
+    if(o.O&&!o.A)return {err:'TCP/IP fingerprinting (for OS scan) requires root privileges.\nQUITTING!'};
+    if(tcpTypes.some(t=>t!=='T')||o.scanTypes.has('U'))return {err:'You requested a scan type which requires root privileges.\nQUITTING!'};
+    if(o.A){o.O=false;o.traceroute=false}
+  }
+  let tcpType=tcpTypes[0]||null;const udp=o.scanTypes.has('U');
+  if(!tcpType&&!udp)tcpType=root?'S':'T';
+  let tcpSet,udpSet;
+  if(o.portSpec!=null){const ps=parsePortSpec(o.portSpec);if(!ps)return {err:'Error #487: Your port specifications are illegal.  Example of proper form: "-100,200-1024,T:3000-4000,U:60000-"\nQUITTING!'};tcpSet=rangesSet(ps.tcp);udpSet=rangesSet(ps.udp)}
+  else{const n=o.top||1000;tcpSet=topSet('tcp',n);udpSet=topSet('udp',n)}
+
+  const now=new Date(),out=[`Starting Nmap 7.94SVN ( https://nmap.org ) at ${stamp(now)}`];
+  const targets=[],seen=new Set();
+  for(const raw of o.targets){
+    const x=expandTarget(raw);
+    if(x&&x.big)return {err:'This practice range caps one scan at 4,096 addresses (a /20). The lab network is 10.10.10.0/24.'};
+    if(!x){out.push(`Failed to resolve "${raw}".`);continue}
+    for(const ip of x.ips){if(seen.has(ip))continue;seen.add(ip);targets.push({ip,given:x.name||null});if(targets.length>4096)return {err:'This practice range caps one scan at 4,096 addresses (a /20). The lab network is 10.10.10.0/24.'}}
+  }
+  if(!targets.length){out.push('WARNING: No targets were specified, so 0 hosts scanned.','Nmap done: 0 IP addresses (0 hosts up) scanned in 0.04 seconds');return {lines:out,sim:0.04}}
+
+  const verbose=[],reports=[],gnmap=[],xmlHosts=[];
+  let up=0,simMax=0,simSum=0,first=null,firstUpDisc=null,firstDown=null;
+  const discT=(o.Pn?0:(targets.length>1?2.1+targets.length*0.004:0.12))*(o.T<=2?[40,6,2][o.T]:1);
+  const types=[];if(!o.sn){if(tcpType&&tcpSet.count)types.push(['tcp',tcpType,tcpSet]);if(udp&&udpSet.count)types.push(['udp','U',udpSet])}
+  const discovered={};
+  for(const t of targets){
+    const h=lab.hosts[t.ip]||null,d=discover(h,o,root);
+    t.disp=t.given?`${t.given} (${t.ip})`:(!o.n&&h)?`${h.name} (${t.ip})`:t.ip;
+    if(!d.up){if(!firstDown||(h&&!lab.hosts[firstDown.ip]))firstDown={ip:t.ip,h,d};continue}
+    up++;
+    if(h&&!firstUpDisc)firstUpDisc={ip:t.ip,h,d,disp:t.disp};
+    if(o.sn){
+      const lat=h?`${h.lat.toFixed(3)}s latency`:null;
+      reports.push([`Nmap scan report for ${t.disp}`,o.reason?`Host is up, received ${d.reason}${lat?` (${lat})`:''}.`:(lat?`Host is up (${lat}).`:'Host is up.')]);
+      gnmap.push(`Host: ${t.ip} (${h&&!o.n?h.name:''})\tStatus: Up`);
+      continue;
+    }
+    const res=types.map(([p,ty,set])=>scanProto(h,p,ty,set));
+    const f=formatHost(t,h,d,res,o);
+    for(const r of res)for(const e of r.entries)if(e.state==='open'){(discovered[r.type]=discovered[r.type]||[]).push(`Discovered open port ${e.port}/${e.proto} on ${t.ip}`)}
+    if(f){
+      reports.push(f.lines);
+      const nm=h&&!o.n?h.name:'';
+      gnmap.push(`Host: ${t.ip} (${nm})\tStatus: Up`);
+      gnmap.push(`Host: ${t.ip} (${nm})\tPorts: ${f.rows.map(e=>`${e.port}/${e.state}/${e.proto}//${o.sV&&e.state==='open'&&e.rec?e.rec.svc:defaultName(e.proto,e.port)}//${o.sV&&e.state==='open'&&e.rec?e.rec.version:''}/`).join(', ')}${f.ignored.length?`\tIgnored State: ${f.ignored.join(', ')}`:''}`);
+      xmlHosts.push({ip:t.ip,name:nm,rows:f.rows});
+    }
+    const ht=hostTime(res,o);simMax=Math.max(simMax,ht);simSum+=ht;
+    if(!first||(!first.h&&h))first={h,res,disp:t.disp,ip:t.ip};
+  }
+  const sim=discT+(o.sn?0:simMax+simSum*0.05)+0.03;
+  if(o.v){
+    if(!o.Pn)verbose.push(`Initiating Ping Scan at ${hm(now)}`,`Scanning ${targets.length} host${targets.length>1?'s':''} [${root?4:2} ports/host]`,`Completed Ping Scan at ${hm(now)}, ${discT.toFixed(2)}s elapsed (${targets.length} total host${targets.length>1?'s':''})`);
+    if(!o.n&&up)verbose.push(`Initiating Parallel DNS resolution of ${up} host${up>1?'s':''}. at ${hm(now)}`,`Completed Parallel DNS resolution of ${up} host${up>1?'s':''}. at ${hm(now)}, 0.03s elapsed`);
+    if(up)for(const [p,ty,set] of types){verbose.push(`Initiating ${SCAN_INFO[ty].v} at ${hm(now)}`,`Scanning ${up} host${up>1?'s':''} [${set.count} port${set.count>1?'s':''}/host]`,...(discovered[ty]||[]),`Completed ${SCAN_INFO[ty].v} at ${hm(now)}, ${(simMax*0.8).toFixed(2)}s elapsed (${set.count*up} total ports)`)}
+  }
+  out.push(...verbose);
+  reports.forEach(r=>out.push(...r,''));
+  if(!reports.length&&up&&!o.sn)out.push('');
+  if(targets.length===1&&up===0)out.push('Note: Host seems down. If it is really up, but blocking our ping probes, try -Pn');
+  if(!o.sn&&up){
+    if(o.O&&o.sV)out.push('OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .');
+    else if(o.O)out.push('OS detection performed. Please report any incorrect results at https://nmap.org/submit/ .');
+    else if(o.sV)out.push('Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .');
+  }
+  const done=`Nmap done: ${targets.length} IP address${targets.length===1?'':'es'} (${up} host${up===1?'':'s'} up) scanned in ${sim.toFixed(2)} seconds`;
+  out.push(done);
+
+  // saved output files
+  const files={},cmdShown='nmap '+args.join(' ');
+  const normal=()=>[`# Nmap 7.94SVN scan initiated ${stamp(now)} as: ${cmdShown}`,...out.slice(1,-1),`# ${done.replace('Nmap done:','Nmap done at '+stamp(now)+' --')}`].join('\n');
+  const grep=()=>[`# Nmap 7.94SVN scan initiated ${stamp(now)} as: ${cmdShown}`,...gnmap,`# ${done.replace('Nmap done:','Nmap done at '+stamp(now)+' --')}`].join('\n');
+  const xa=s=>esc(s);
+  const xml=()=>['<?xml version="1.0" encoding="UTF-8"?>',`<nmaprun scanner="nmap" args="${xa(cmdShown)}" version="7.94SVN">`,...xmlHosts.map(x=>`<host><status state="up"/><address addr="${x.ip}" addrtype="ipv4"/>${x.name?`<hostnames><hostname name="${xa(x.name)}" type="PTR"/></hostnames>`:''}<ports>${x.rows.map(e=>`<port protocol="${e.proto}" portid="${e.port}"><state state="${e.state}"/><service name="${xa(o.sV&&e.state==='open'&&e.rec?e.rec.svc:defaultName(e.proto,e.port))}"${o.sV&&e.state==='open'&&e.rec&&e.rec.version?` product="${xa(e.rec.version)}"`:''}/></port>`).join('')}</ports></host>`),`<runstats><finished summary="${xa(done)}"/></runstats>`,'</nmaprun>'].join('\n');
+  for(const f of o.outs){
+    if(f.fmt==='N')files[f.name]=normal();else if(f.fmt==='G')files[f.name]=grep();else if(f.fmt==='X')files[f.name]=xml();
+    else{files[f.name+'.nmap']=normal();files[f.name+'.gnmap']=grep();files[f.name+'.xml']=xml()}
+  }
+
+  // packet trace for the notebook
+  let trace=null;
+  if(o.sn||(!first&&!o.Pn)){
+    const samples=[];
+    if(!o.Pn){
+      if(firstUpDisc)samples.push({label:firstUpDisc.disp,state:'up',steps:discoverySteps(firstUpDisc.h,root,firstUpDisc.d),why:`One reply is enough to mark the host up (reason: ${firstUpDisc.d.reason}).`,target:firstUpDisc.ip});
+      if(firstDown)samples.push({label:firstDown.h?firstDown.h.name+' ('+firstDown.ip+')':firstDown.ip,state:'down',steps:discoverySteps(firstDown.h,root,firstDown.d),why:firstDown.h?'Every probe was dropped, so nmap marks this host down and never port-scans it. It is running, though. A firewall is hiding it, and -Pn would find its ports.':'Nothing answered. There is no machine at this address.',target:firstDown.ip});
+      trace={title:`Host discovery${root?' as root':' without root'}`,about:root?'As root, nmap sends four probes per address: ICMP echo, TCP SYN to 443, TCP ACK to 80 and ICMP timestamp. Any reply means the host is up.':'Without root nmap cannot craft raw packets, so it only tries TCP connections to ports 80 and 443. Hosts that drop both look down.',samples};
+    }
+  }else if(first){
+    const cands=[];
+    for(const r of first.res){
+      cands.push(...r.entries);
+      if(r.defCount>0){const lp=new Set(r.entries.map(e=>e.port));const pool=(r.set.list||(r.proto==='tcp'?TOP100:UDP_TOP)).concat([1,2,3]);const p=pool.find(x=>r.set.has(x)&&!lp.has(x));if(p)cands.push({port:p,proto:r.proto,type:r.type,state:r.defState,rec:null})}
+    }
+    const want=['open','closed','unfiltered','filtered','open|filtered'],chosen=[];
+    const special=cands.find(e=>e.state==='closed'&&e.rec&&e.rec.state==='open');
+    if(special)chosen.push(special);
+    for(const proto of ['tcp','udp'])for(const s of want){const e=cands.find(c=>c.proto===proto&&c.state===s);if(e&&!chosen.some(c=>c.proto===proto&&c.state===s))chosen.push(e)}
+    const typesUsed=[...new Set(first.res.map(r=>r.type))];
+    trace={title:`${typesUsed.map(t=>SCAN_INFO[t].name).join(' + ')} · ${first.disp}`,about:typesUsed.map(t=>SCAN_INFO[t].about).join(' '),
+      samples:chosen.slice(0,4).map(e=>({label:`${e.port}/${e.proto}`,state:e.state,steps:probeSteps(e.type,e.state),why:probeWhy(e),target:first.ip}))};
+  }
+  return {lines:out,sim,files,trace};
+}
+
+const NMAP_HELP=`Nmap 7.94SVN ( https://nmap.org )   [practice-range subset]
+Usage: nmap [Scan Type(s)] [Options] {target specification}
+TARGET SPECIFICATION:
+  Hostnames, IP addresses, networks. Ex: 10.10.10.1, 10.10.10.0/24, 10.10.10.1-50, web01
+HOST DISCOVERY:
+  -sn: Ping Scan - disable port scan
+  -Pn: Treat all hosts as online -- skip host discovery
+  -PS/PA/PU[portlist]: TCP SYN/ACK or UDP discovery to given ports
+  -PE: ICMP echo request discovery probe
+  -n: Never do DNS resolution
+SCAN TECHNIQUES:
+  -sS/sT/sA: TCP SYN/Connect()/ACK scans
+  -sU: UDP Scan
+  -sN/sF/sX: TCP Null, FIN, and Xmas scans
+PORT SPECIFICATION:
+  -p <port ranges>: Only scan specified ports
+    Ex: -p22; -p1-65535; -p-; -p U:53,161,T:21-25,80
+  -F: Fast mode - Scan fewer ports than the default scan
+  --top-ports <number>: Scan <number> most common ports
+SERVICE/VERSION DETECTION:
+  -sV: Probe open ports to determine service/version info
+SCRIPT SCAN:
+  -sC: equivalent to --script=default
+OS DETECTION:
+  -O: Enable OS detection
+TIMING AND PERFORMANCE:
+  -T<0-5>: Set timing template (higher is faster)
+OUTPUT:
+  -oN/-oX/-oG <file>: Output scan in normal, XML, and grepable format
+  -oA <basename>: Output in the three major formats at once
+  -v: Increase verbosity level (use -vv or more for greater effect)
+  --reason: Display the reason a port is in a particular state
+  --open: Only show open (or possibly open) ports
+MISC:
+  -A: Enable OS detection, version detection, script scanning, and traceroute
+  -h: Print this help summary page.
+EXAMPLES:
+  sudo nmap -sn 10.10.10.0/24
+  sudo nmap -sCV -p 22,80 10.10.10.1
+  sudo nmap -sU --top-ports 20 10.10.10.1`;
+const HELP=`Commands in this practice shell
+  nmap [options] <targets>   run a simulated scan
+  sudo <command>             run one command as root (no password in this lab)
+  sudo -i                    open a root shell; type exit to leave it
+  ping [-c N] <host>         send ICMP echo requests
+  ip a                       show your network interfaces
+  ls / cat <file>            read files saved with -oN, -oG, -oX or -oA
+  history, whoami, clear     the usual
+  nmap -h                    nmap option summary
+
+Keys: Up/Down for history, Ctrl+C stops a running scan, Ctrl+L clears.`;
+
+/* ---------- challenges ---------- */
+function buildTasks(L){
+  const all=Object.values(L.hosts);
+  const rootUp=all.filter(h=>discover(h,{probes:[]},true).up).length;
+  const userUp=all.filter(h=>discover(h,{probes:[]},false).up).length;
+  const dbOpen=Object.values(L.db.tcp).filter(p=>p.state==='open').length;
+  const c=s=>`<code>${esc(s)}</code>`;
+  const num=n=>a=>parseInt(String(a).replace(/[^\d]/g,''),10)===n;
+  const verNum=L.ftp.ftpVer.split(' ')[1];
+  const sshCount=all.filter(h=>h.tcp[22]&&h.tcp[22].state==='open').length;
+  const dcOpen=Object.values(L.dc.tcp).filter(p=>p.state==='open').length;
+  const dbKind=L.db.tcp[3306]?'mysql':'postgresql';
+  const norm=s=>String(s).trim().toLowerCase();
+  return [
+    {id:'sweep',tag:'Host discovery',q:`Run a ping sweep of ${c('10.10.10.0/24')} as root. How many hosts are up?`,hint:`${c('sudo nmap -sn 10.10.10.0/24')}`,answer:String(rootUp),check:num(rootUp)},
+    {id:'sweep-user',tag:'Privileges',q:'Run the same sweep without sudo. How many hosts are up now?',hint:`${c('nmap -sn 10.10.10.0/24')}. Without root, nmap can only try TCP connections to ports 80 and 443. Open the Packets tab after the scan to see why.`,answer:String(userUp),check:num(userUp)},
+    {id:'hidden',tag:'Host discovery',q:'One Windows workstation drops every discovery probe, so ping sweeps miss it. What is its IP?',hint:`Skip discovery and look for Windows ports: ${c('sudo nmap -Pn -p 135,445,3389 --open 10.10.10.0/24')}. Then compare with your sweep.`,answer:L.ws.ip,check:a=>a.trim()===L.ws.ip},
+    {id:'rdp',tag:'Port scanning',q:'Which TCP port on that workstation offers remote desktop?',hint:`${c('sudo nmap -Pn <its IP>')} and read the SERVICE column.`,answer:'3389',check:num(3389)},
+    {id:'ssh',tag:'Version detection',q:`Which OpenSSH version runs on ${c(L.web.ip)}? Answer like ${c('7.4p1')}.`,hint:c(`sudo nmap -sV -p 22 ${L.web.ip}`),answer:L.web.sshShort,check:a=>a.toLowerCase().includes(L.web.sshShort)},
+    {id:'dc',tag:'Enumeration',q:`Which host is the domain controller (Kerberos on port 88)? Give its short hostname.`,hint:`${c('sudo nmap -p 88 --open 10.10.10.0/24')}. The report line shows the name.`,answer:'dc01',check:a=>['dc01','dc01.corp.lab'].includes(a.trim().toLowerCase())},
+    {id:'snmp',tag:'UDP',q:`${c(L.router.ip)} runs a UDP service for network management. Which port?`,hint:`UDP scans are slow, so limit them: ${c(`sudo nmap -sU --top-ports 20 ${L.router.ip}`)}`,answer:'161',check:num(161)},
+    {id:'high',tag:'Port ranges',q:`${c(L.dev.ip)} runs a web service that a default scan misses. Which port?`,hint:`Default scans cover only 1,000 ports. ${c(`sudo nmap -p- -T4 ${L.dev.ip}`)}`,answer:String(L.dev.highPort),check:num(L.dev.highPort)},
+    {id:'ftpver',tag:'Version detection',q:`Which FTP server software and version runs on ${c(L.ftp.ip)}?`,hint:c(`sudo nmap -sV -p 21 ${L.ftp.ip}`),answer:L.ftp.ftpVer,check:a=>a.includes(verNum)},
+    {id:'anon',tag:'Scripts',q:'Does that FTP server allow anonymous login? Answer yes or no.',hint:`Default scripts include ftp-anon: ${c(`sudo nmap -sC -p 21 ${L.ftp.ip}`)}`,answer:L.ftp.anon?'yes':'no',check:a=>a.trim().toLowerCase().startsWith(L.ftp.anon?'y':'n')},
+    {id:'dbopen',tag:'Port scanning',q:`How many of the default 1,000 TCP ports are open on ${c(L.db.ip)}?`,hint:c(`sudo nmap ${L.db.ip}`),answer:String(dbOpen),check:num(dbOpen)},
+    {id:'xmas',tag:'Scan types',q:`Run an Xmas scan against port 445 on ${c(L.dc.ip)}. Which state does nmap report?`,hint:`${c(`sudo nmap -sX -p 445 ${L.dc.ip}`)}. Then compare with a SYN scan of the same port.`,answer:'closed',check:a=>a.trim().toLowerCase()==='closed'},
+    {id:'ttl',tag:'Fingerprinting',q:`What TTL do replies from ${c(L.dc.ip)} carry?`,hint:c(`sudo nmap --reason -p 445 ${L.dc.ip}`),answer:'127',check:num(127)},
+    {id:'sshcount',tag:'Sweeps',q:`How many hosts in ${c('10.10.10.0/24')} have SSH (port 22) open?`,hint:`Scan one port across the whole range and hide hosts without it: ${c('sudo nmap -p 22 --open 10.10.10.0/24')}`,answer:String(sshCount),check:num(sshCount)},
+    {id:'websoft',tag:'Version detection',q:`Which web server software runs on port 80 of ${c(L.web.ip)}? Answer Apache or nginx.`,hint:c(`sudo nmap -sV -p 80 ${L.web.ip}`),answer:L.web.webSoft,check:a=>norm(a).includes(L.web.webSoft.toLowerCase())},
+    {id:'webtitle',tag:'Scripts',q:`What is the page title of the website on ${c(L.web.ip)}?`,hint:`The http-title script shows it: ${c(`sudo nmap -sC -p 80 ${L.web.ip}`)}`,answer:L.web.webTitle,check:a=>norm(a)===L.web.webTitle.toLowerCase()},
+    {id:'dbkind',tag:'Version detection',q:`Which database server runs on ${c(L.db.ip)}? Answer MySQL or PostgreSQL.`,hint:`${c(`sudo nmap -sV ${L.db.ip}`)} and look past port 22.`,answer:dbKind==='mysql'?'MySQL':'PostgreSQL',check:a=>norm(a).replace(/\s/g,'').startsWith(dbKind==='mysql'?'mysql':'postgres')},
+    {id:'dcopen',tag:'Port scanning',q:`How many TCP ports from the default 1,000 are open on the domain controller ${c(L.dc.ip)}?`,hint:c(`sudo nmap ${L.dc.ip}`),answer:String(dcOpen),check:num(dcOpen)},
+    {id:'domain',tag:'Enumeration',q:`Which Active Directory domain does the LDAP service on ${c(L.dc.ip)} report?`,hint:`${c(`sudo nmap -sV -p 389 ${L.dc.ip}`)}. Nmap prints the name with a stray ${c('0.')} on the end; leave that off.`,answer:'corp.lab',check:a=>norm(a).replace(/0?\.$/,'')==='corp.lab'},
+    {id:'acks',tag:'Scan types',q:`Run an ACK scan (${c('-sA')}) against ${c(L.db.ip)}. Which state does nmap report for its ports?`,hint:`${c(`sudo nmap -sA ${L.db.ip}`)}. Then try the same scan on the domain controller and compare.`,answer:'unfiltered',check:a=>norm(a)==='unfiltered'},
+    {id:'udp67',tag:'UDP',q:`Which state does a UDP scan report for port 67 on ${c(L.router.ip)}?`,hint:c(`sudo nmap -sU -p 67 ${L.router.ip}`),answer:'open|filtered',check:a=>norm(a).replace(/\s/g,'')==='open|filtered'},
+    {id:'wsos',tag:'OS detection',q:'Which Windows version does OS detection guess for the workstation that blocks ping?',hint:`OS detection still needs ${c('-Pn')} here: ${c(`sudo nmap -Pn -O ${L.ws.ip}`)}`,answer:'Windows 10',check:a=>/\b10\b/.test(a)},
+    {id:'netbios',tag:'Scripts',q:'What NetBIOS computer name does the workstation report over RDP?',hint:`The rdp-ntlm-info script reads it: ${c(`sudo nmap -Pn -sC -p 3389 ${L.ws.ip}`)}`,answer:L.ws.short,check:a=>{const v=norm(a);return v===L.ws.short.toLowerCase()||v===L.ws.name}},
+    {id:'smbsign',tag:'Scripts',q:'Is SMB message signing required on the workstation? Answer yes or no.',hint:`Look under "Host script results": ${c(`sudo nmap -Pn -sC -p 445 ${L.ws.ip}`)}`,answer:'no',check:a=>norm(a).startsWith('n')},
+    {id:'devtitle',tag:'Scripts',q:`What is the page title of the web app on ${c(L.dev.ip)}'s high port?`,hint:`Use the port you found earlier: ${c(`sudo nmap -sC -p <port> ${L.dev.ip}`)}`,answer:L.dev.appTitle,check:a=>norm(a)===L.dev.appTitle.toLowerCase()}
+  ];
+}
+let tasks=[];
+function renderTasks(){
+  const solved=store.get('solved:'+lab.seed,{}),wrap=$('#taskList');wrap.innerHTML='';
+  tasks.forEach((t,i)=>{
+    const done=!!solved[t.id],el=document.createElement('article');
+    el.className='task'+(done?' done':'');
+    el.innerHTML=`<div class="num">${pad2(i+1)}</div><div>
+      <div class="tag">${esc(t.tag)}</div><p class="q">${t.q}</p>
+      <form class="ans"><input id="ans-${t.id}" aria-label="Answer to challenge ${i+1}" placeholder="Your answer" ${done?'disabled':''} value="${done?esc(t.answer):''}"><button class="btn sm" ${done?'disabled':''}>Check</button></form>
+      <div class="fb"></div>
+      ${done?'':`<div class="hintrow"><button type="button" class="linkbtn" data-act="hint">Show hint</button></div><div class="hint" hidden>${t.hint}<div class="reveal"><button type="button" class="linkbtn" data-act="reveal">Reveal answer</button></div></div>`}
+    </div>`;
+    const form=el.querySelector('form'),fb=el.querySelector('.fb');
+    form.addEventListener('submit',e=>{
+      e.preventDefault();const v=form.querySelector('input').value;if(!v.trim())return;
+      if(t.check(v)){const s=store.get('solved:'+lab.seed,{});s[t.id]=true;store.set('solved:'+lab.seed,s);renderTasks();const n=document.querySelector(`#ans-${t.id}`);if(n)n.closest('.task').querySelector('.fb').textContent='Correct.',n.closest('.task').querySelector('.fb').className='fb ok'}
+      else{fb.textContent='Not quite. Check your scan output, or open the hint.';fb.className='fb bad'}
+    });
+    el.addEventListener('click',e=>{
+      const b=e.target.closest('[data-act]');if(!b)return;
+      if(b.dataset.act==='hint'){const h=el.querySelector('.hint');h.hidden=!h.hidden;b.textContent=h.hidden?'Show hint':'Hide hint'}
+      if(b.dataset.act==='reveal'){b.parentElement.innerHTML=`Answer: <code>${esc(t.answer)}</code>`}
+    });
+    wrap.appendChild(el);
+  });
+  const n=Object.keys(solved).filter(k=>tasks.some(t=>t.id===k)).length;
+  $('#score').textContent=`${n}/${tasks.length}`;
+  $('#progressTxt').textContent=`${n} of ${tasks.length} solved`;
+  $('#bar').style.width=`${tasks.length?n/tasks.length*100:0}%`;
+}
+
+/* ---------- packets panel ---------- */
+let trace=null;
+const stClass=s=>({open:'st-open',closed:'st-closed',filtered:'st-filtered','open|filtered':'st-of',unfiltered:'st-unf',up:'st-up',down:'st-down'}[s]||'st-unf');
+function renderPackets(){
+  const w=$('#pkWrap');
+  if(!trace){w.innerHTML=`<h2>Packets</h2><p class="empty">Run a port scan or ping sweep and the probes nmap sent for a few sample ports appear here.</p>`;return}
+  w.innerHTML=`<div class="eyebrow">${trace.example?'Example':'Last scan'}</div><h2>${esc(trace.title)}</h2><p class="lede" style="margin-top:6px">${esc(trace.about)}</p>
+  <div class="pk-list">${trace.samples.map(s=>`<article class="pk"><header><code>${esc(s.label)}</code><span class="st ${stClass(s.state)}">${esc(s.state)}</span></header>
+    <div class="ends"><span>you · ${ATTACKER}</span><span>target · ${esc(s.target)}</span></div>
+    <div class="ladder">${s.steps.map(([d,l])=>`<div class="msg ${d}"><span class="lbl">${esc(l)}</span><span class="line"></span></div>`).join('')}</div>
+    <p class="why">${esc(s.why)}</p></article>`).join('')}</div>`;
+}
+function exampleTrace(){
+  const h=lab.web,r=scanProto(h,'tcp','S',topSet('tcp',1000));
+  const e1=r.entries[0],e2={port:21,proto:'tcp',type:'S',state:'closed',rec:null},d=lab.dc,e3={port:80,proto:'tcp',type:'S',state:'filtered',rec:null};
+  return {example:true,title:`SYN scan · ${h.name}`,about:SCAN_INFO.S.about+' The filtered example comes from the domain controller, which sits behind a firewall.',
+    samples:[{label:`${e1.port}/tcp`,state:'open',steps:probeSteps('S','open'),why:probeWhy(e1),target:h.ip},{label:'21/tcp',state:'closed',steps:probeSteps('S','closed'),why:probeWhy(e2),target:h.ip},{label:'80/tcp',state:'filtered',steps:probeSteps('S','filtered'),why:probeWhy(e3),target:d.ip}]};
+}
+
+/* ---------- quiz ---------- */
+const QUIZ=[
+  {q:'A SYN scan gets SYN/ACK back from port 22. What does nmap send next?',o:['ACK, to finish the handshake','RST, to tear the connection down','FIN, to close politely','Nothing'],a:1,x:'A SYN scan never completes the handshake. The RST stops the target from holding a half-open connection, which is why it is called a half-open scan.'},
+  {q:'You run nmap without sudo and without a scan-type flag. Which scan runs?',o:['SYN scan (-sS)','Connect scan (-sT)','UDP scan (-sU)','ACK scan (-sA)'],a:1,x:'Crafting raw packets needs root. An unprivileged user falls back to connect(), which completes the full handshake.'},
+  {q:'What does the state "filtered" mean?',o:['The port sent a RST','A service is listening but refused you','No reply (or an ICMP unreachable error), so something is blocking the probe','The port is open but the version is unknown'],a:2,x:'Filtered means nmap cannot reach the port to find out. A firewall or filter is dropping or rejecting the probe.'},
+  {q:'A UDP probe gets no reply after retries. Which state does nmap report?',o:['closed','filtered','open|filtered','open'],a:2,x:'An open UDP service may ignore a probe it does not understand, and a firewall drop looks the same.'},
+  {q:'Which reply proves a UDP port is closed?',o:['TCP RST','ICMP type 3, code 3 (port unreachable)','ICMP echo reply','No reply'],a:1,x:'Port unreachable is the only definite "closed" answer for UDP. Linux rate-limits these messages, which is why UDP scans are slow.'},
+  {q:'Which scan maps firewall rules but cannot tell open from closed?',o:['-sA','-sS','-sV','-sX'],a:0,x:'An ACK scan reports unfiltered (a RST came back) or filtered (no reply). It never reports open or closed.'},
+  {q:'Which TCP flags does an Xmas scan set?',o:['SYN and ACK','FIN, PSH and URG','FIN only','None'],a:1,x:'FIN, PSH and URG light up the header "like a Christmas tree". A NULL scan sets no flags; a FIN scan sets only FIN.'},
+  {q:'An Xmas scan of a Windows server reports its ports as closed, but a SYN scan shows 445 open. Why?',o:['Windows closed the port between scans','Windows answers RST to these probes even on open ports, ignoring RFC 793','Xmas scans only work on UDP','The scan needed -Pn'],a:1,x:'FIN, NULL and Xmas scans rely on RFC 793 behaviour. Windows replies RST regardless, so open ports look closed.'},
+  {q:'What does -Pn do?',o:['Ping sweep only, no port scan','Skips host discovery and treats every target as up','Turns off DNS resolution','Scans all 65,535 ports'],a:1,x:'Use it when a host blocks ping probes. -sn is the opposite: discovery only, no port scan.'},
+  {q:'Without -p, how many ports does nmap scan per protocol?',o:['100','The 1,000 most common','All 65,535','Ports 1-1024'],a:1,x:'The default is the top 1,000 from nmap-services. -F scans the top 100 and -p- scans all 65,535.'},
+  {q:'Replies come back with TTL 127, and one router sits between you and the target. Which OS family is most likely?',o:['Linux (starts at 64)','Windows (starts at 128)','Network gear (starts at 255)','Cannot tell'],a:1,x:'Windows starts at 128 and each router subtracts one. Linux would arrive as 63 and most printers or routers as 254.'},
+  {q:'Which features does -A turn on?',o:['Only aggressive timing','OS detection, version detection, default scripts and traceroute','All 65,535 ports','An ACK scan'],a:1,x:'-A equals -O -sV -sC --traceroute. Aggressive timing is -T4.'},
+  {q:'Which flag finds live hosts without scanning any ports?',o:['-Pn','-sn','-sV','-F'],a:1,x:'-sn runs host discovery only. Older guides call it -sP.'},
+  {q:'Why is a SYN scan called "stealthy" compared with a connect scan?',o:['It encrypts its probes','It never completes the handshake, so the application usually never logs a connection','It hides your IP address','It only scans filtered ports'],a:1,x:'The service never sees an established connection. Firewalls and IDS can still see the SYN packets, so it is not invisible.'},
+  {q:'You run nmap as root against hosts on your own local Ethernet segment. How does it discover them?',o:['ICMP echo only','ARP requests','TCP connect to 80 and 443','DNS lookups'],a:1,x:'On a local network nmap uses ARP, which hosts must answer, so a firewall that blocks ping does not hide them. This range is two hops away, so ARP does not apply here.'},
+  {q:'Without root, which probes does nmap -sn send?',o:['ICMP echo and timestamp','TCP connect attempts to ports 80 and 443','UDP to port 53','ARP requests'],a:1,x:'Unprivileged users cannot craft raw packets, so discovery falls back to connect() on 80 and 443. Hosts that drop both look down.'},
+  {q:'Why do UDP scans of Linux hosts take so long?',o:['UDP packets are bigger','Linux rate-limits ICMP port-unreachable replies, to about one per second','Nmap scans UDP ports one host at a time','UDP needs a handshake'],a:1,x:'Each closed port needs an ICMP reply. At about one per second, the default 1,000 UDP ports can take around 17 minutes. Use --top-ports to cut that down.'},
+  {q:'A port shows as "open  tcpwrapped". What happened?',o:['The service uses TLS','The handshake completed, but the service closed the connection without sending data','The port is filtered','The scan timed out'],a:1,x:'Something such as TCP Wrappers or an application allow-list accepted the connection and dropped it at once. The port is open, but nmap could not identify the service.'},
+  {q:'Version detection shows "microsoft-ds?" with a question mark. What does it mean?',o:['The port is filtered','Nmap guessed the service from the port number but could not confirm it','The service is vulnerable','The port is closed'],a:1,x:'A trailing ? means a low-confidence match.'},
+  {q:'Which timing template waits about five minutes between probes?',o:['-T0 (paranoid)','-T1 (sneaky)','-T3 (normal)','-T5 (insane)'],a:0,x:'-T0 and -T1 are meant to slip past intrusion detection, and they are extremely slow. -T3 is the default, and -T4 is common on fast, reliable networks.'},
+  {q:'Which output format is designed to be searched with grep or awk?',o:['-oN','-oX','-oG','-oS'],a:2,x:'-oG writes one line per host. -oX is XML for tools, -oN is normal text, and -oA writes .nmap, .gnmap and .xml at once.'},
+  {q:'Which service usually listens on TCP port 3389?',o:['SMB','RDP (Remote Desktop)','WinRM','LDAP'],a:1,x:'Nmap names it ms-wbt-server. SMB is 445, WinRM is 5985/5986 and LDAP is 389.'},
+  {q:'Which UDP port is SNMP, often left with the "public" community string?',o:['53','123','161','500'],a:2,x:'SNMP agents listen on 161/udp, and traps go to 162/udp. 53 is DNS, 123 is NTP and 500 is IKE.'},
+  {q:'A host has ports 88, 389 and 445 open. What is it most likely to be?',o:['A web server','A Windows domain controller','A printer','A mail server'],a:1,x:'Kerberos (88), LDAP (389) and SMB (445) together point to Active Directory. DNS on 53 and the global catalog on 3268 usually appear too.'},
+  {q:'Which reply makes nmap report a port as "filtered" right away, without waiting for a timeout?',o:['TCP RST','ICMP unreachable, administratively prohibited (type 3, code 13)','SYN/ACK','ICMP echo reply'],a:1,x:'A firewall that rejects instead of dropping sends an ICMP unreachable error. Nmap treats that as filtered too.'}
+];
+function renderQuiz(){
+  const saved=store.get('quiz',{}),wrap=$('#quizList');wrap.innerHTML='';let right=0,answered=0;
+  QUIZ.forEach((q,i)=>{
+    const pickd=saved[i],el=document.createElement('div');el.className='qz';
+    el.innerHTML=`<p><strong>${i+1}.</strong> ${esc(q.q)}</p><div class="opts">${q.o.map((t,j)=>`<button type="button" class="opt${pickd!=null?(j===q.a?' right':j===pickd?' wrong':''):''}" data-j="${j}" ${pickd!=null?'disabled':''}>${esc(t)}</button>`).join('')}</div>${pickd!=null?`<div class="explain">${pickd===q.a?'Correct. ':'Not quite. '}${esc(q.x)}</div>`:''}`;
+    if(pickd!=null){answered++;if(pickd===q.a)right++}
+    el.addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b||b.disabled)return;const s=store.get('quiz',{});s[i]=+b.dataset.j;store.set('quiz',s);renderQuiz()});
+    wrap.appendChild(el);
+  });
+  $('#quizScore').textContent=answered?`Score: ${right} of ${answered} answered.`:'';
+}
+
+/* ---------- terminal ---------- */
+const out=$('#out'),input=$('#cmd'),promptEl=$('#prompt');
+let isRoot=false,busy=null,hist=store.get('history',[]),hIdx=-1,files={};
+function promptText(){return isRoot?'root@kali:~#':'student@kali:~$'}
+function updatePrompt(){promptEl.textContent=promptText();$('#termTitle').textContent=isRoot?'root@kali: ~':'student@kali: ~'}
+function colorize(text){
+  const m=text.match(/^(\d+\/(?:tcp|udp))(\s+)(open\|filtered|unfiltered|open|closed|filtered)(?=\s|$)/);
+  if(m){const s=m[3],cls=s==='open'?'s-open':s==='closed'?'s-closed':s==='open|filtered'?'s-of':s==='unfiltered'?'s-unf':'s-filt';return esc(m[1])+m[2]+`<span class="${cls}">${esc(s)}</span>`+esc(text.slice(m[0].length))}
+  if(text.startsWith('Nmap scan report for'))return `<span class="t-head">${esc(text)}</span>`;
+  return esc(text);
+}
+function print(text,cls){
+  const d=document.createElement('div');
+  if(cls)d.className=cls;
+  if(cls==='l-err'||cls==='l-dim'||cls==='l-status')d.textContent=text;
+  else{if(/^(Note:|WARNING|Warning:)/.test(text))d.className='l-warn';d.innerHTML=colorize(text)}
+  out.appendChild(d);
+  while(out.childElementCount>6000)out.firstElementChild.remove();
+  out.scrollTop=out.scrollHeight;return d;
+}
+function echo(cmd){const d=document.createElement('div');d.className='l-cmd';d.innerHTML=`<span class="p">${esc(promptText())}</span> ${esc(cmd)}`;out.appendChild(d);out.scrollTop=out.scrollHeight}
+function banner(){
+  out.innerHTML='';
+  [`Nmap Practice Range · lab #${lab.seed}`,
+   `You are on kali (${ATTACKER}). The lab network 10.10.10.0/24 is two hops away, behind 10.10.14.1.`,
+   'Every scan here is simulated in your browser. No packets leave this page.',
+   '',
+   'Type help for commands, or start with:  sudo nmap -sn 10.10.10.0/24',''].forEach((t,i)=>print(t,i===0?null:'l-dim'));
+}
+function tokenize(s){const t=[];const re=/"([^"]*)"|'([^']*)'|(\S+)/g;let m;while((m=re.exec(s)))t.push(m[1]??m[2]??m[3]);return t}
+function fmtElapsed(s){s=Math.floor(s);return `${Math.floor(s/3600)}:${pad2(Math.floor(s/60)%60)}:${pad2(s%60)}`}
+async function play(lines,sim){
+  const job={abort:false};busy=job;
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  print(lines[0]);
+  const total=reduce?150:Math.min(3400,380+Math.log10(1+sim)*950),scanPart=total*0.72;
+  const status=print('','l-status'),t0=performance.now();
+  while(performance.now()-t0<scanPart&&!job.abort){const f=(performance.now()-t0)/scanPart;status.textContent=`Stats: ${fmtElapsed(sim*f)} elapsed; ${Math.round(f*100)}% done (simulated)`;await sleep(70)}
+  status.remove();
+  const rest=lines.slice(1),per=(total-scanPart)/Math.max(1,rest.length);
+  for(let i=0;i<rest.length;i++){
+    if(job.abort){print('^C','l-dim');busy=null;return false}
+    print(rest[i]);
+    if(rest.length<160||i%10===0)await sleep(Math.max(2,Math.min(per,35)));
+  }
+  busy=null;return !job.abort;
+}
+async function runNmapCmd(args,root){
+  const r=nmapRun(args,root);
+  if(r.err){r.err.split('\n').forEach(l=>print(l,'l-err'));return}
+  if(r.text){r.text.split('\n').forEach(l=>print(l));return}
+  const ok=await play(r.lines,r.sim);
+  if(!ok)return;
+  Object.assign(files,r.files);
+  if(r.trace){trace=r.trace;renderPackets();if(currentTab!=='packets')$('#t-packets').classList.add('fresh')}
+}
+async function ping(args){
+  let n=4,target=null;
+  for(let i=0;i<args.length;i++){if(args[i]==='-c'){n=Math.max(1,Math.min(10,parseInt(args[++i],10)||4))}else if(!args[i].startsWith('-'))target=args[i]}
+  if(!target){print('ping: usage error: Destination address required','l-err');return}
+  const x=expandTarget(target);
+  if(!x||x.big||x.ips.length!==1){print(`ping: ${target}: Name or service not known`,'l-err');return}
+  const ip=x.ips[0],h=lab.hosts[ip];
+  const job={abort:false};busy=job;
+  print(`PING ${target} (${ip}) 56(84) bytes of data.`);
+  let got=0;
+  for(let i=1;i<=n;i++){
+    await sleep(320);if(job.abort){print('^C','l-dim');break}
+    if(h&&h.icmp){got++;print(`64 bytes from ${ip}: icmp_seq=${i} ttl=${h.ttl} time=${(h.lat*1000+Math.random()*4).toFixed(1)} ms`)}
+  }
+  print('');print(`--- ${target} ping statistics ---`);
+  print(`${n} packets transmitted, ${got} received, ${Math.round((n-got)/n*100)}% packet loss, time ${(n-1)*1003}ms`);
+  if(got)print(`rtt min/avg/max/mdev = ${(h.lat*1000).toFixed(3)}/${(h.lat*1000+2).toFixed(3)}/${(h.lat*1000+4).toFixed(3)}/1.204 ms`);
+  busy=null;
+}
+async function exec(raw){
+  const line=raw.trim();echo(raw);if(!line)return;
+  if(hist[hist.length-1]!==line){hist.push(line);if(hist.length>200)hist=hist.slice(-200);store.set('history',hist)}
+  let toks=tokenize(line),root=isRoot;
+  if(toks[0]==='sudo'){
+    toks=toks.slice(1);
+    if(!toks.length){print('usage: sudo -i | sudo <command>','l-err');return}
+    if(toks[0]==='-i'||toks[0]==='-s'||(toks[0]==='su'&&toks.length===1)){isRoot=true;updatePrompt();return}
+    root=true;
+  }
+  const [c,...args]=toks;
+  switch(c){
+    case 'nmap':return runNmapCmd(args,root);
+    case 'help':HELP.split('\n').forEach(l=>print(l));return;
+    case 'clear':out.innerHTML='';return;
+    case 'whoami':print(root?'root':'student');return;
+    case 'id':print(root?'uid=0(root) gid=0(root) groups=0(root)':'uid=1000(student) gid=1000(student) groups=1000(student),27(sudo)');return;
+    case 'ip':case 'ifconfig':
+      ['1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536','    inet 127.0.0.1/8 scope host lo','2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500','    inet 192.168.56.101/24 brd 192.168.56.255 scope global eth0','3: tun0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500','    inet 10.10.14.7/23 scope global tun0'].forEach(l=>print(l));return;
+    case 'ping':return ping(args);
+    case 'ls':{const n=Object.keys(files);if(n.length)print(n.join('  '));return}
+    case 'cat':{if(!args[0]){print('cat: missing file operand','l-err');return}for(const f of args){if(files[f]!=null)files[f].split('\n').forEach(l=>print(l));else print(`cat: ${f}: No such file or directory`,'l-err')}return}
+    case 'history':hist.slice(-30).forEach((h,i,a)=>print(`${String(hist.length-a.length+i+1).padStart(5)}  ${h}`));return;
+    case 'exit':case 'logout':if(isRoot){isRoot=false;updatePrompt()}else print('This is the only shell in the lab. Use "New lab" to start over.','l-dim');return;
+    case 'su':print('Password: ','l-dim');print('su: Authentication failure','l-err');print('Hint: use sudo -i in this lab.','l-dim');return;
+    case 'man':if(args[0]==='nmap'){selectTab('ref');print('Opened the cheat sheet in the notebook panel.','l-dim')}else print(`No manual entry for ${args[0]||''}`,'l-err');return;
+    default:print(`${c}: command not found`,'l-err');
+  }
+}
+$('#cmdForm').addEventListener('submit',async e=>{
+  e.preventDefault();if(busy)return;
+  const v=input.value;input.value='';hIdx=-1;
+  await exec(v);
+});
+input.addEventListener('keydown',e=>{
+  if(e.ctrlKey&&(e.key==='c'||e.key==='C')){
+    if(input.selectionStart!==input.selectionEnd&&!busy)return;
+    e.preventDefault();
+    if(busy)busy.abort=true;else{echo(input.value+'^C');input.value=''}
+    return;
+  }
+  if(e.ctrlKey&&(e.key==='l'||e.key==='L')){e.preventDefault();out.innerHTML='';return}
+  if(e.key==='ArrowUp'){if(!hist.length)return;e.preventDefault();hIdx=hIdx<0?hist.length-1:Math.max(0,hIdx-1);input.value=hist[hIdx];requestAnimationFrame(()=>input.setSelectionRange(input.value.length,input.value.length))}
+  if(e.key==='ArrowDown'){if(hIdx<0)return;e.preventDefault();hIdx++;if(hIdx>=hist.length){hIdx=-1;input.value=''}else input.value=hist[hIdx]}
+});
+out.addEventListener('click',()=>{if(!getSelection().toString())input.focus({preventScroll:true})});
+$('#clearBtn').addEventListener('click',()=>{out.innerHTML='';input.focus()});
+
+/* ---------- tabs ---------- */
+let currentTab='tasks';
+function selectTab(name){
+  currentTab=name;
+  document.querySelectorAll('.tabs [role=tab]').forEach(b=>{const on=b.dataset.tab===name;b.setAttribute('aria-selected',on);b.tabIndex=on?0:-1;if(on)b.classList.remove('fresh')});
+  document.querySelectorAll('.tabpanel').forEach(p=>p.hidden=p.id!=='tab-'+name);
+  store.set('tab',name);
+}
+document.querySelectorAll('.tabs [role=tab]').forEach(b=>b.addEventListener('click',()=>selectTab(b.dataset.tab)));
+$('#quizReset').addEventListener('click',()=>{store.set('quiz',{});renderQuiz()});
+
+/* ---------- lab lifecycle ---------- */
+function chips(){
+  const c=$('#chips');c.querySelectorAll('.chip').forEach(x=>x.remove());
+  ['sudo nmap -sn 10.10.10.0/24','nmap 10.10.10.1',`sudo nmap -sCV ${lab.web.ip}`,`sudo nmap -sU --top-ports 20 10.10.10.1`,'help'].forEach(t=>{
+    const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=t;
+    b.addEventListener('click',()=>{input.value=t;input.focus()});c.appendChild(b);
+  });
+}
+function loadLab(seed){
+  lab=buildLab(seed);store.set('seed',seed);
+  $('#labId').textContent='#'+seed;
+  tasks=buildTasks(lab);files={};isRoot=false;updatePrompt();
+  trace=exampleTrace();
+  banner();renderTasks();renderPackets();chips();
+}
+$('#newLab').addEventListener('click',()=>{if(busy)busy.abort=true;let s;do{s=1000+Math.floor(Math.random()*9000)}while(s===lab.seed);loadLab(s);input.focus()});
+
+loadLab(store.get('seed',2417));
+renderQuiz();
+const savedTab=store.get('tab','tasks');if(['tasks','packets','ref','quiz'].includes(savedTab))selectTab(savedTab);
+})();
+</script>
+</body>
+</html>
